@@ -31,3 +31,12 @@ export interface ExpectedTenantMembership {
   plan: string;
   role: string;
 }
+
+// auth.controller.ts only does a presence check (no email format validation) and
+// auth.service.ts never distinguishes "no such user" from "wrong password" — both
+// error shapes are Nest's default HttpException body, not a custom envelope.
+export interface LoginErrorResponseBody {
+  message: string;
+  error: string;
+  statusCode: number;
+}

@@ -9,7 +9,7 @@ import {
   billingLoginBody,
 } from './login-api.data';
 
-test.describe('login api', { tag: ['@login', '@api'] }, () => {
+test.describe('login api', { tag: ['@auth', '@login', '@api'] }, () => {
 
   test('validate owner user can login', async ({ request }) => {
     const response = await sendLoginRequest(request, ownerLoginBody);
