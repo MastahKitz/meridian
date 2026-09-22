@@ -15,3 +15,8 @@ export async function captureAccessToken(response: APIResponse): Promise<string>
   const body: LoginResponseBody = await response.json();
   return body.accessToken;
 }
+
+export async function captureRefreshToken(response: APIResponse): Promise<string> {
+  const body: LoginResponseBody = await response.json();
+  return body.refreshToken;
+}
