@@ -1,16 +1,20 @@
 /* Usage: node scripts/seed.js [--large]
    Seeds three tenants with users, keys and usage history.
-   --large adds ~250k usage events to the Northwind tenant. */
+   --large adds ~250k usage events to the Northwind tenant.
+
+   Also importable as `require('./seed').seed({ large })` — used by the Playwright
+   global setup to reseed after a truncate. Assumes an empty DB (or a DB truncated
+   via `TRUNCATE users, tenants RESTART IDENTITY CASCADE`, which cascades to every
+   other table) — api_keys and usage_events have no ON CONFLICT handling, so seeding
+   twice without truncating first duplicates them. */
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const { randomBytes, createHash } = require('crypto');
 
-const large = process.argv.includes('--large');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
 const hash = (s) => createHash('sha256').update(s).digest('hex');
 
-async function main() {
+async function seed({ large = false } = {}) {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const pw = await bcrypt.hash('Password123!', 10);
 
   const users = {};
@@ -150,9 +154,14 @@ async function main() {
   console.log('\nAll users share the password: Password123!');
 
   await pool.end();
+  return { tenants, users, keys };
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { seed };
+
+if (require.main === module) {
+  seed({ large: process.argv.includes('--large') }).catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
