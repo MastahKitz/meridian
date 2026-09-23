@@ -3,8 +3,8 @@ import { withHookRequestContext } from '../utils/api.utils';
 import { generateAccessToken, assertCanLogin } from '../auth/login/login-api.flow';
 import { getTenantId } from '../utils/seed.utils';
 import { ownerLoginBody, adminLoginBody } from '../auth/login/login-api.data';
-import { sendCreateMembershipRequest } from './memberships-api.actions';
-import { assertCreateMembershipSuccess } from './memberships-api.assertions';
+import { sendMembershipCreateRequest } from './memberships-api.actions';
+import { assertMembershipCreateSuccess } from './memberships-api.assertions';
 import { randomEmail, DEFAULT_INVITE_PASSWORD } from './memberships-api.data';
 
 test.describe('memberships api - create', { tag: ['@memberships', '@api', '@mutating'] }, () => {
@@ -22,8 +22,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
   // an OWNER may grant any of the 5 roles, including another OWNER.
   test('validate owner user can create a new member with role owner', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'OWNER' });
-    await assertCreateMembershipSuccess(response, 'OWNER');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'OWNER' });
+    await assertMembershipCreateSuccess(response, 'OWNER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'OWNER' },
@@ -32,8 +32,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate owner user can create a new member with role admin', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'ADMIN' });
-    await assertCreateMembershipSuccess(response, 'ADMIN');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'ADMIN' });
+    await assertMembershipCreateSuccess(response, 'ADMIN');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'ADMIN' },
@@ -42,8 +42,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate owner user can create a new member with role member', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'MEMBER' });
-    await assertCreateMembershipSuccess(response, 'MEMBER');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'MEMBER' });
+    await assertMembershipCreateSuccess(response, 'MEMBER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'MEMBER' },
@@ -52,8 +52,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate owner user can create a new member with role viewer', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'VIEWER' });
-    await assertCreateMembershipSuccess(response, 'VIEWER');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'VIEWER' });
+    await assertMembershipCreateSuccess(response, 'VIEWER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'VIEWER' },
@@ -62,8 +62,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate owner user can create a new member with role billing', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'BILLING' });
-    await assertCreateMembershipSuccess(response, 'BILLING');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'BILLING' });
+    await assertMembershipCreateSuccess(response, 'BILLING');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'BILLING' },
@@ -75,8 +75,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
   // actually blocked today) — not repeated here.
   test('validate admin user can create a new member with role admin', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('mutating'), { email, role: 'ADMIN' });
-    await assertCreateMembershipSuccess(response, 'ADMIN');
+    const response = await sendMembershipCreateRequest(request, adminToken, getTenantId('mutating'), { email, role: 'ADMIN' });
+    await assertMembershipCreateSuccess(response, 'ADMIN');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'ADMIN' },
@@ -85,8 +85,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate admin user can create a new member with role member', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('mutating'), { email, role: 'MEMBER' });
-    await assertCreateMembershipSuccess(response, 'MEMBER');
+    const response = await sendMembershipCreateRequest(request, adminToken, getTenantId('mutating'), { email, role: 'MEMBER' });
+    await assertMembershipCreateSuccess(response, 'MEMBER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'MEMBER' },
@@ -95,8 +95,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate admin user can create a new member with role viewer', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('mutating'), { email, role: 'VIEWER' });
-    await assertCreateMembershipSuccess(response, 'VIEWER');
+    const response = await sendMembershipCreateRequest(request, adminToken, getTenantId('mutating'), { email, role: 'VIEWER' });
+    await assertMembershipCreateSuccess(response, 'VIEWER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'VIEWER' },
@@ -105,8 +105,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate admin user can create a new member with role billing', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('mutating'), { email, role: 'BILLING' });
-    await assertCreateMembershipSuccess(response, 'BILLING');
+    const response = await sendMembershipCreateRequest(request, adminToken, getTenantId('mutating'), { email, role: 'BILLING' });
+    await assertMembershipCreateSuccess(response, 'BILLING');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'BILLING' },
@@ -116,8 +116,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
   test('validate owner user can create a new member with a specified password', async ({ request }) => {
     const email = randomEmail();
     const password = 'CustomPass123!';
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'MEMBER', password });
-    await assertCreateMembershipSuccess(response, 'MEMBER');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email, role: 'MEMBER', password });
+    await assertMembershipCreateSuccess(response, 'MEMBER');
 
     await assertCanLogin(request, { email, password }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'MEMBER' },
@@ -126,8 +126,8 @@ test.describe('memberships api - create', { tag: ['@memberships', '@api', '@muta
 
   test('validate a new member defaults to role member when role is not specified', async ({ request }) => {
     const email = randomEmail();
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email });
-    await assertCreateMembershipSuccess(response, 'MEMBER');
+    const response = await sendMembershipCreateRequest(request, ownerToken, getTenantId('mutating'), { email });
+    await assertMembershipCreateSuccess(response, 'MEMBER');
 
     await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
       { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'MEMBER' },

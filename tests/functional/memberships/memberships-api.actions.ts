@@ -2,7 +2,7 @@ import { APIRequestContext } from '@playwright/test';
 import { sendApiRequest } from '../utils/api.utils';
 import { CreateMembershipRequestBody } from './memberships-api.data';
 
-export async function sendGetMembershipsRequest(request: APIRequestContext, accessToken?: string, tenantId?: string) {
+export async function sendMembershipsListRequest(request: APIRequestContext, accessToken?: string, tenantId?: string) {
   const headers: Record<string, string> = {};
   if (accessToken !== undefined) headers['Authorization'] = `Bearer ${accessToken}`;
   if (tenantId !== undefined) headers['x-tenant-id'] = tenantId;
@@ -14,7 +14,7 @@ export async function sendGetMembershipsRequest(request: APIRequestContext, acce
   });
 }
 
-export async function sendCreateMembershipRequest(
+export async function sendMembershipCreateRequest(
   request: APIRequestContext,
   accessToken: string | undefined,
   tenantId: string | undefined,

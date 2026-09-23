@@ -37,6 +37,15 @@ elsewhere in the repo.
    multi-route controller needs subfolders — a controller whose routes are only ever exercised
    together stays flat.
 
+   **A read `.spec.ts`'s operation suffix says which shape of GET it is — `-details` for a
+   single item, `-list` for a collection — never a bare `-get`.** `-get` doesn't distinguish the
+   two, and breaks the moment a domain has both: `tenant/tenant-details-api.spec.ts` (`GET
+   /tenant` returns one tenant) vs. `memberships/memberships-list-api.spec.ts` (`GET
+   /memberships` returns an array). Action/assertion function names carry the same distinction —
+   `sendTenantDetailsRequest`/`assertTenantDetailsSuccess`,
+   `sendMembershipsListRequest`/`assertMembershipsListSuccess` — never `Get` in an exported name.
+   Mutations keep their existing plain verbs (`-create`, `-edit`, `-delete`).
+
 2. **`.spec.ts` files contain no raw request calls and no raw `expect(...)`.** They call
    flow / assertion helpers. Calling a single named **action** directly from a spec is fine
    when there's no multi-step journey to name — but a new interaction or check belongs in that
