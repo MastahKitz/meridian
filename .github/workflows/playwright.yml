@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Optional extra @tag filter, e.g. @tenant (ANDed with the mutating/non-mutating split; leave blank to run everything in each phase)'
+        description: 'Optional @tag filter, e.g. @tenant (leave blank to run the whole suite)'
         type: string
         default: ''
 
@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 30
     env:
       # push events have no `inputs` context, so this falls back to blank
-      # (run everything in each phase) same as a manual run left blank.
+      # (run the whole suite) same as a manual run left blank.
       QA_TAG: ${{ github.event.inputs.tag }}
     steps:
       # Check out the repo at the pushed commit so the workflow can run its code.
@@ -85,41 +85,13 @@ jobs:
       - name: Configure test environment
         run: cp tests/functional/config/.env.example tests/functional/config/.env
 
-      # Non-mutating first, then mutating — two separate `playwright test`
-      # invocations, not a single run across both projects and not a `dependencies`
-      # gate, so a create/delete never races a list/count assertion elsewhere
-      # (docs/qa/conventions.md rule 9; each invocation gets its own fresh
-      # global.setup reseed too). --pass-with-no-tests: an extra @tag that only
-      # exists in one phase leaves the other phase with an empty selection, and
-      # Playwright treats "no tests" as exit 1 by default.
-      - name: Run Playwright tests - non-mutating
-        env:
-          PW_PHASE: non-mutating
-        run: npx playwright test --project=non-mutating --pass-with-no-tests ${QA_TAG:+--grep "$QA_TAG"}
-
-      # Playwright's blob reporter clears its WHOLE outputDir on every write,
-      # not just its own file — so this phase's zip has to be moved out of
-      # blob-report/ before the next phase starts, or it's wiped when that
-      # phase's blob reporter writes.
-      - name: Collect non-mutating-phase report
-        if: always()
-        run: |
-          mkdir -p merged-blobs
-          cp blob-report/non-mutating.zip merged-blobs/
-
-      - name: Run Playwright tests - mutating
-        if: always()
-        env:
-          PW_PHASE: mutating
-        run: npx playwright test --project=mutating --pass-with-no-tests ${QA_TAG:+--grep "$QA_TAG"}
-
-      - name: Collect mutating-phase report
-        if: always()
-        run: cp blob-report/mutating.zip merged-blobs/
-
-      - name: Merge phase reports
-        if: always()
-        run: npx playwright merge-reports --config=playwright.config.ts merged-blobs
+      # Every mutating spec now writes only to its own dedicated scratch
+      # tenant (docs/qa/conventions.md rule 9), so a create/delete can never
+      # race a list/count assertion elsewhere — no phase split needed, one
+      # invocation across the whole suite. --pass-with-no-tests: an empty
+      # @tag selection (a typo'd manual filter) would otherwise exit 1.
+      - name: Run Playwright tests
+        run: npx playwright test --pass-with-no-tests ${QA_TAG:+--grep "$QA_TAG"}
 
       # Post-process the run's results and fail the build if any test only passed on retry.
       - name: Fail build if any test was flaky
@@ -134,15 +106,13 @@ jobs:
           path: test-report/
           retention-days: 14
 
-      # Traces/screenshots from failed tests only, uploaded only when the run
-      # failed. Each phase writes its own test-results-<phase>/ dir, same
-      # reason as the blob reporter's per-phase filename (playwright.config.ts).
+      # Traces/screenshots from failed tests only, uploaded only when the run failed.
       - name: Upload failure traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
-          path: test-results-*/
+          path: test-results/
           retention-days: 14
 
       - name: Stop Docker Compose services

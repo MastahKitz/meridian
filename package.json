@@ -5,7 +5,7 @@
   "scripts": {
     "seed": "node scripts/seed.js",
     "seed:large": "node scripts/seed.js --large",
-    "test:functional": "node scripts/run-phased-tests.js",
+    "test:functional": "playwright test",
     "test:functional:report": "playwright show-report test-report"
   },
   "dependencies": {

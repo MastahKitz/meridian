@@ -122,12 +122,25 @@ elsewhere in the repo.
    if only one test in it can actually write data — e.g. an otherwise all-403 `-error.spec.ts`
    with one assumption-test that currently succeeds because of a real implementation bug (see
    `memberships-create-api-error.spec.ts`) — since CI schedules by file/describe, not by
-   individual test. CI is expected to run `@mutating` specs as their own phase, isolated from
-   specs asserting exact-match lists against the same shared data, via **two separate
-   `playwright test` invocations rather than a project `dependencies` gate** — reseeding between
-   full runs (`global.setup.ts`) doesn't help *within* one run, since a worker running a mutating
-   spec can leave a row transiently visible to a concurrently-running list assertion in a
-   different worker.
+   individual test.
+
+   **Every domain that needs `@mutating` coverage gets its own dedicated scratch tenant(s) and
+   users — never a tenant any non-mutating spec also asserts against, and never shared with
+   another domain's mutating tests.** This is what actually prevents a create/delete from racing
+   a concurrently-running list/count assertion, or one mutating domain's writes from racing
+   another's on the same tenant row or audit log — a worker can leave a row transiently visible
+   mid-write, and reseeding between full runs (`global.setup.ts`) doesn't help *within* one run.
+   Naming convention: tenant `name`/`slug` is `<domain>-mutating` (e.g. `memberships-mutating`);
+   users are `<domain>-owner@mutating.test` / `<domain>-admin@mutating.test` (e.g.
+   `memberships-owner@mutating.test`) — `.test` rather than `.com`, matching every other seeded
+   email in `scripts/seed.js` (`.test` is the IANA-reserved TLD for exactly this, guaranteed to
+   never resolve to a real domain). A shared `@mutating.test` suffix across every domain's users
+   makes a scratch user identifiable as scratch at a glance; the `<domain>-` prefix says which
+   domain owns it. Because isolation now lives in the *data* (each mutating spec only ever
+   touches its own scratch tenant), the suite runs as a single `playwright test` invocation —
+   no phase split, no separate `mutating`/`non-mutating` projects. `@mutating` is kept purely as
+   a selective-run filter (`--grep @mutating` to run only mutating specs, `--grep-invert
+   @mutating` for a fast read-only smoke check), not because CI requires it.
 
 10. **`test.describe.configure({ mode: 'serial' })`** whenever tests depend on state left by
     earlier tests in the same file. Inter-test dependency without serial mode is a bug waiting

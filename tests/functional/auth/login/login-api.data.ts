@@ -18,6 +18,11 @@ export const billingLoginBody: LoginRequestBody = { email: 'billing@acme.test', 
 export const northwindOwnerLoginBody: LoginRequestBody = { email: 'owner@northwind.test', password };
 export const sakuraOwnerLoginBody: LoginRequestBody = { email: 'owner@sakura.test', password };
 
+// memberships-create's own scratch users (conventions.md rule 9) — see
+// memberships-mutating tenant in scripts/seed.js.
+export const membershipsMutatingOwnerLoginBody: LoginRequestBody = { email: 'memberships-owner@mutating.test', password };
+export const membershipsMutatingAdminLoginBody: LoginRequestBody = { email: 'memberships-admin@mutating.test', password };
+
 export interface LoginResponseBody {
   accessToken: string;
   refreshToken: string;
