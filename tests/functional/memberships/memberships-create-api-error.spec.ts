@@ -42,7 +42,7 @@ test.describe('memberships api - create errors', { tag: ['@memberships', '@api',
   });
 
   test('validate a new member cannot be invited with an invalid access token', async ({ request }) => {
-    const response = await sendCreateMembershipRequest(request, 'not-a-real-token', getTenantId('acme'), { email: randomEmail() });
+    const response = await sendCreateMembershipRequest(request, 'not-a-real-token', getTenantId('mutating'), { email: randomEmail() });
     await assertInvalidTokenError(response);
   });
 
@@ -52,7 +52,7 @@ test.describe('memberships api - create errors', { tag: ['@memberships', '@api',
   });
 
   test('validate a new member cannot be invited without an access token', async ({ request }) => {
-    const response = await sendCreateMembershipRequest(request, undefined, getTenantId('acme'), { email: randomEmail() });
+    const response = await sendCreateMembershipRequest(request, undefined, getTenantId('mutating'), { email: randomEmail() });
     await assertMissingTokenError(response);
   });
 
@@ -78,7 +78,7 @@ test.describe('memberships api - create errors', { tag: ['@memberships', '@api',
   });
 
   test('validate a new member cannot be invited with an invalid role', async ({ request }) => {
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), {
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), {
       email: randomEmail(),
       role: 'SUPERADMIN',
     });
@@ -86,7 +86,7 @@ test.describe('memberships api - create errors', { tag: ['@memberships', '@api',
   });
 
   test('validate a new member cannot be invited with a blank email', async ({ request }) => {
-    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email: '' });
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('mutating'), { email: '' });
     await assertEmailRequiredError(response);
   });
 
@@ -96,7 +96,7 @@ test.describe('memberships api - create errors', { tag: ['@memberships', '@api',
   // doesn't enforce it despite rbac.ts's ROLE_RANK/atLeast existing for
   // exactly this purpose. Kept as a documented, known-failing assumption.
   test('validate admin user cannot invite a new member as owner', async ({ request }) => {
-    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('acme'), {
+    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('mutating'), {
       email: randomEmail(),
       role: 'OWNER',
     });

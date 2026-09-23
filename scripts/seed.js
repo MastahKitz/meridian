@@ -42,6 +42,7 @@ async function seed({ large = false } = {}) {
     { name: 'Acme Corp', slug: 'acme', plan: 'FREE', timezone: 'UTC' },
     { name: 'Northwind Traders', slug: 'northwind', plan: 'GROWTH', timezone: 'America/New_York' },
     { name: 'Sakura KK', slug: 'sakura', plan: 'SCALE', timezone: 'Asia/Tokyo' },
+    { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -63,6 +64,8 @@ async function seed({ large = false } = {}) {
     ['northwind', 'admin@northwind.test', 'ADMIN'],
     ['northwind', 'member@acme.test', 'VIEWER'],
     ['sakura', 'owner@sakura.test', 'OWNER'],
+    ['mutating', 'owner@acme.test', 'OWNER'],
+    ['mutating', 'admin@acme.test', 'ADMIN'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
