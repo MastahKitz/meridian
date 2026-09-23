@@ -17,6 +17,7 @@ CREATE TABLE tenants (
   plan                plan_tier NOT NULL DEFAULT 'FREE',
   timezone            TEXT NOT NULL DEFAULT 'UTC',
   suspended           BOOLEAN NOT NULL DEFAULT false,
+  rate_limit_override INTEGER,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
