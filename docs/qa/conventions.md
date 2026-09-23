@@ -61,29 +61,43 @@ elsewhere in the repo.
    source framework's version of this rule was actually violated once Meridian needed
    `requireEnv` in more than one place.
 
-6. **Locators are testid-first** for any UI layer built later (`getByTestId(...)`), falling
-   back to `getByRole` / `getByLabel` only where there's no testid, and raw CSS/XPath only as a
-   last resort with a comment. Not yet exercised — no UI tests exist yet — but binding for when
-   `overview/` and any other E2E work starts.
+6. **Locators are testid-first.** `getByTestId(...)` for element identity — clicks, scoping,
+   reading a field's value — falling back to `getByRole` / `getByLabel` only where there's no
+   testid, and raw CSS/XPath only as a genuine last resort with a comment. No `data-testid`
+   exists anywhere in `apps/web` yet, so every locator in `overview/overview.assertions.ts` is
+   currently in that fallback tier (e.g. `getByLabel('Email')` for the login form, which has no
+   testid) — this rule is still binding, it just means add testids to `apps/web` before reaching
+   for a raw CSS selector, not that the fallback tier is the norm.
 
 7. **Assertions use `expect.soft(...)`**, not bare `expect(...)`, inside `.assertions.ts` files
    (see `assertResponseStatus` / `assertResponseBody` in `utils/api.utils.ts`), so one run
    surfaces every failing check instead of stopping at the first.
 
-8. **Assertions match exactly once the full response shape is known.** `assertResponseBody(...,
-   { exact: true })` is the default posture for anything with a stable, fully-known shape — see
-   every assertion in `auth/`. Dynamic fields (a UUID, a JWT, a random hex refresh token) get an
-   asymmetric matcher (`expect.stringMatching(...)`) mixed into the same exact-match object,
-   never a reason to drop to a partial match.
+8. **Assertions match exactly once the full shape is known** — the API-layer and UI-layer forms
+   of the same posture, not two different rules. API: `assertResponseBody(..., { exact: true })`
+   is the default for anything with a stable, fully-known shape — see every assertion in `auth/`.
+   Dynamic fields (a UUID, a JWT, a random hex refresh token) get an asymmetric matcher
+   (`expect.stringMatching(...)`) mixed into the same exact-match object, never a reason to drop
+   to a partial match. UI: `toHaveText(...)` against the full, exact
+   expected text, not `toContainText(...)`'s partial/substring match, once that text is fully
+   known — see `overview/overview.assertions.ts`, including two-cell table rows whose exact text
+   is the label directly concatenated with the value (no whitespace between adjacent `<td>`s in
+   the JSX). A partially-dynamic text node (a computed percentage, a timestamp) gets an *anchored*
+   regex (`^...$`) passed to `getByText(...)`/`toHaveText(...)` — unanchored, `getByText` matches
+   on any substring, which is the DOM equivalent of silently dropping to a partial match.
 
 9. **Every `test.describe(...)` tags every folder level, not just the immediate one** —
    **this is a deliberate deviation from the source framework**, which tags only the innermost
    folder. `auth/login/login-api.spec.ts` tags `['@auth', '@login', '@api']`, not just
    `['@login', '@api']`, so the whole `auth` domain and just its `login` sub-feature can each be
-   run independently (`--grep @auth` vs `--grep @login`). **Error specs add `@error` on top** —
-   `['@auth', '@login', '@api', '@error']` — another addition not in the source framework, so
-   the full error-path suite can be run in isolation (`--grep @error`) as its own CI phase or
-   quick sanity check. **A spec whose tests write shared domain data — create, edit, delete, or
+   run independently (`--grep @auth` vs `--grep @login`). **Every spec also carries a layer tag —
+   `@api` for the `-api` file set, `@ui` for anything else** (`overview/overview.spec.ts` tags
+   `['@overview', '@ui']`) — so the (fast, no browser) API suite and the (slower, browser-driven)
+   UI suite can each be run independently of the other, the same reasoning as the `@auth`/`@login`
+   split above. **Error specs add `@error` on top** — `['@auth', '@login', '@api', '@error']` —
+   another addition not in the source framework, so the full error-path suite can be run in
+   isolation (`--grep @error`) as its own CI phase or quick sanity check. **A spec whose tests
+   write shared domain data — create, edit, delete, or
    anything else that mutates real server-side data rather than only reading it — also carries
    `@mutating`** (the source framework has this same tag, on this same rule): `['@memberships',
    '@api', '@mutating']` in `memberships-create-api.spec.ts`. Tag the whole `describe` block even
@@ -101,8 +115,15 @@ elsewhere in the repo.
     earlier tests in the same file. Inter-test dependency without serial mode is a bug waiting
     to happen under parallel execution.
 
-11. **Every UI interaction is followed by a deterministic wait** — never a hardcoded sleep. Not
-    yet exercised (no UI tests yet), binding for later E2E work.
+11. **Every UI interaction is followed by a deterministic wait** — a specific locator/state
+    (`await expect(locator).toBeVisible()`, `await expect(page).toHaveURL(...)`),
+    `page.waitForLoadState(...)`, or `page.waitForResponse(...)` armed *before* an action that
+    fires an API call. **Never `page.waitForTimeout(...)` or any hardcoded sleep.** See
+    `auth/login/login.actions.ts`'s `goToLogin` (waits for the app's own client-side redirect to
+    `/login` via `toHaveURL`) and that same file's `waitForOverviewPage` (waits for the
+    post-login redirect to `/dashboard` via `toHaveURL`, then `networkidle` for the Overview
+    page's own data fetches) — composed into `login.flow.ts`'s `loginViaUi` rather than inlined
+    there, per rule 2/3.
 
 12. *(Reserved — the source framework's rule 12 was cart/order-specific and doesn't apply to
     Meridian's domain. Numbering kept stable rather than renumbering every rule below.)*
@@ -141,8 +162,19 @@ elsewhere in the repo.
     doesn't presuppose an existing session. Binding once another domain's tests need an
     authenticated actor to test something that isn't auth.
 
-18. **Navigate through the UI, not the URL bar**, for any UI layer built later. Not yet
-    exercised — no UI tests yet.
+18. **Navigate through the UI, not the URL bar — `page.goto` is only for the one true entry
+    point.** Every other page is reached the way a real user reaches it, not
+    `page.goto('/some-path')` — jumping straight to a URL skips navigation a test could otherwise
+    catch breaking (a moved link, a broken redirect) and skips that navigation's own deterministic
+    wait (rule 11). Meridian's entry point is the app's actual root: `auth/login/login.actions.ts`'s
+    `goToLogin` does `page.goto(environment.webBaseUrl)` (Home, `apps/web/app/page.tsx`) and then
+    waits for *that page's own* client-side redirect to `/login` — it does not `page.goto('/login')`
+    directly. This is a deliberate adaptation, not a literal copy, of the source framework's
+    version of this rule (whose app has an actual clickable "sign in" link on its home page to
+    click through instead) — Meridian's Home has no clickable link at all, only a redirect based
+    on session state, so landing on `/login` via that redirect is this app's equivalent of "the
+    way a real user reaches it." `goToLogin` lives in `auth/login/` (not the domain that happens
+    to use it first) for the same reason `generateAccessToken` does — rule 23.
 
 19. **An assertion that already exists gets composed, not re-derived.** Before writing a new
     named assertion, check whether an existing one — in the same file, a sibling feature file in

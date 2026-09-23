@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { renderHtml, readJsonSafe } = require('./lib/render-dashboard');
 
-const MAX_RUNS = 5;
+const MAX_RUNS = 10;
 
 // fs.cpSync (Node's built-in recursive copy) was observed to fail silently on
 // at least one Windows/OneDrive setup, with no error surfaced at all — using

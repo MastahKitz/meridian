@@ -38,16 +38,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Bring up just what the API-layer suite needs — postgres, redis, the mock
-      # billing provider, and the API itself. `web` isn't started: nothing
-      # exercises it yet (no UI/browser tests exist), so building it here would
-      # only slow the run down. Add it back once an E2E layer needs it.
+      # postgres, redis, the mock billing provider, the API, and now `web` too —
+      # tests/functional/overview/*.spec.ts drives it directly (the first, so
+      # far only, browser-based spec in the suite).
       - name: Start Docker Compose services
-        run: docker compose up -d --build postgres redis mock-billing api
+        run: docker compose up -d --build postgres redis mock-billing api web
+
+      # Only needed once a spec actually drives a browser (tests/functional/
+      # overview/*) — every other spec uses Playwright's `request` fixture,
+      # which needs no browser binary at all.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       # depends_on/healthy only covers postgres and redis being ready before the
-      # api container *starts* — the api service itself has no healthcheck
-      # block, so poll its own health endpoint before tests assume it's ready.
+      # api/web containers *start* — neither has its own healthcheck block, so
+      # poll each one's own readiness before tests assume it's ready.
       - name: Wait for API to be healthy
         run: |
           for i in $(seq 1 30); do
@@ -59,6 +64,19 @@ jobs:
           done
           echo "API did not become healthy in time" >&2
           docker compose logs api
+          exit 1
+
+      - name: Wait for web to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/login > /dev/null; then
+              echo "web is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "web did not become ready in time" >&2
+          docker compose logs web
           exit 1
 
       # The test framework's own .env (see config/.env.example's header) — every
@@ -116,13 +134,15 @@ jobs:
           path: test-report/
           retention-days: 14
 
-      # Traces/screenshots from failed tests only, uploaded only when the run failed.
+      # Traces/screenshots from failed tests only, uploaded only when the run
+      # failed. Each phase writes its own test-results-<phase>/ dir, same
+      # reason as the blob reporter's per-phase filename (playwright.config.ts).
       - name: Upload failure traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
-          path: test-results/
+          path: test-results-*/
           retention-days: 14
 
       - name: Stop Docker Compose services
@@ -130,7 +150,7 @@ jobs:
         run: docker compose down -v
 
       # ---------------------------------------------------------------------
-      # Publish this run to the GitHub Pages dashboard: last 5 runs with their
+      # Publish this run to the GitHub Pages dashboard: last 10 runs with their
       # counts and a link to each run's full HTML report, served inline so there
       # is nothing to download. Runs even when tests failed, so the dashboard
       # always reflects the latest state.
@@ -152,7 +172,7 @@ jobs:
         run: node scripts/build-report-dashboard.js test-report/results.json test-report gh-pages public
 
       # Force-push the assembled ./public wholesale — the branch only ever holds
-      # the last 5 runs, so purging is automatic.
+      # the last 10 runs, so purging is automatic.
       - name: Publish dashboard to gh-pages
         if: always()
         working-directory: public
