@@ -33,6 +33,16 @@ async function seed({ large = false } = {}) {
     // the Acme users.
     'memberships-owner@mutating.test',
     'memberships-admin@mutating.test',
+    // A1's rate-limit-override scratch users — shared across its three
+    // per-plan-tier tenants below (same domain, same reasoning as above).
+    // member/viewer/billing exist for the @error spec's RBAC-negative tests
+    // (PATCH/DELETE /tenant/rate-limit is OWNER-only) — role rejection is
+    // plan-independent, so these only need membership on one tier.
+    'rate-limit-owner@mutating.test',
+    'rate-limit-admin@mutating.test',
+    'rate-limit-member@mutating.test',
+    'rate-limit-viewer@mutating.test',
+    'rate-limit-billing@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -52,6 +62,13 @@ async function seed({ large = false } = {}) {
     // own dedicated scratch tenant, named `<domain>-mutating` — never shared
     // across domains.
     { name: 'memberships-mutating', slug: 'memberships-mutating', plan: 'FREE', timezone: 'UTC' },
+    // A1: rate-limit override's ceiling is plan-dependent (FREE 500 / GROWTH
+    // 5,000 / SCALE 25,000), so this domain needs one scratch tenant per
+    // tier rather than the usual single `<domain>-mutating` — extended as
+    // `<domain>-mutating-<qualifier>`.
+    { name: 'rate-limit-mutating-free', slug: 'rate-limit-mutating-free', plan: 'FREE', timezone: 'UTC' },
+    { name: 'rate-limit-mutating-growth', slug: 'rate-limit-mutating-growth', plan: 'GROWTH', timezone: 'UTC' },
+    { name: 'rate-limit-mutating-scale', slug: 'rate-limit-mutating-scale', plan: 'SCALE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -75,6 +92,15 @@ async function seed({ large = false } = {}) {
     ['sakura', 'owner@sakura.test', 'OWNER'],
     ['memberships-mutating', 'memberships-owner@mutating.test', 'OWNER'],
     ['memberships-mutating', 'memberships-admin@mutating.test', 'ADMIN'],
+    ['rate-limit-mutating-free', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-free', 'rate-limit-admin@mutating.test', 'ADMIN'],
+    ['rate-limit-mutating-free', 'rate-limit-member@mutating.test', 'MEMBER'],
+    ['rate-limit-mutating-free', 'rate-limit-viewer@mutating.test', 'VIEWER'],
+    ['rate-limit-mutating-free', 'rate-limit-billing@mutating.test', 'BILLING'],
+    ['rate-limit-mutating-growth', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-growth', 'rate-limit-admin@mutating.test', 'ADMIN'],
+    ['rate-limit-mutating-scale', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-scale', 'rate-limit-admin@mutating.test', 'ADMIN'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(

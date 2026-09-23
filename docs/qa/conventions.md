@@ -136,7 +136,11 @@ elsewhere in the repo.
    email in `scripts/seed.js` (`.test` is the IANA-reserved TLD for exactly this, guaranteed to
    never resolve to a real domain). A shared `@mutating.test` suffix across every domain's users
    makes a scratch user identifiable as scratch at a glance; the `<domain>-` prefix says which
-   domain owns it. Because isolation now lives in the *data* (each mutating spec only ever
+   domain owns it. A domain needing more than one scratch tenant (A1's rate-limit override: one
+   per plan tier, since the override ceiling is plan-dependent) extends the pattern to
+   `<domain>-mutating-<qualifier>` (`rate-limit-mutating-free/growth/scale`) — the users stay
+   shared across that domain's own tenants (`rate-limit-owner@mutating.test`), since they're all
+   the same domain's scratch data. Because isolation now lives in the *data* (each mutating spec only ever
    touches its own scratch tenant), the suite runs as a single `playwright test` invocation —
    no phase split, no separate `mutating`/`non-mutating` projects. `@mutating` is kept purely as
    a selective-run filter (`--grep @mutating` to run only mutating specs, `--grep-invert
