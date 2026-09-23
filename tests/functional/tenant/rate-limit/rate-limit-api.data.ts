@@ -12,6 +12,13 @@ export const rateLimitMutatingScaleTenantDetails: ExpectedTenantDetails = {
   name: 'rate-limit-mutating-scale', slug: 'rate-limit-mutating-scale', plan: 'SCALE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.SCALE,
 };
 
+// DELETE /tenant/rate-limit's own tenant — kept separate from the three
+// above so set and clear (both @mutating) never race each other's writes to
+// the same tenant row (see scripts/seed.js).
+export const rateLimitMutatingClearTenantDetails: ExpectedTenantDetails = {
+  name: 'rate-limit-mutating-clear', slug: 'rate-limit-mutating-clear', plan: 'FREE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.FREE,
+};
+
 // A1: PATCH /tenant/rate-limit's own response has no created_at (its RETURNING
 // clause doesn't select it) — a different shape from TenantResponseBody, not
 // a subset of it.
