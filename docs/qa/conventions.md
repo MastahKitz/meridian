@@ -53,6 +53,15 @@ elsewhere in the repo.
    fixture does **not** get a new named fixture — spread the base fixture and override inline
    at the call site (`{ ...ownerLoginBody, password: '' }`).
 
+   **A UI spec reuses its domain's `-api.data.ts` fixtures rather than duplicating them.** The
+   API layer is already the source of truth for what the server returns for a given tenant/role
+   — a UI spec asserting the same data rendered as a page just imports it. See
+   `memberships/memberships.assertions.ts`'s `assertMembersListVisible`, which takes
+   `ExpectedMember[]` straight from `memberships-api.data.ts` (`acmeMembers`) instead of a
+   parallel `memberships.data.ts` fixture. A UI-only `.data.ts` (`overview/overview.data.ts`) is
+   still correct where there's no API-layer equivalent to reuse — Overview's rendered summary
+   doesn't map to one endpoint's response shape.
+
 5. **Reusable utility functions live in `tests/functional/utils/<name>.utils.ts`, not
    duplicated per domain.** `utils/api.utils.ts` holds the API-layer primitives every domain's
    tests build on (`sendApiRequest`, `withHookRequestContext`, `assertResponseStatus`,
