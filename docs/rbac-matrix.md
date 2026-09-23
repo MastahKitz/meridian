@@ -8,6 +8,7 @@ Roles are scoped per tenant. A user may hold different roles in different tenant
 |---|:--:|:--:|:--:|:--:|:--:|
 | View tenant settings | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Update tenant settings | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Set/clear rate limit override | ✅ | ❌ | ❌ | ❌ | ❌ |
 | View audit log | ✅ | ✅ | ❌ | ❌ | ❌ |
 | List members | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Invite members | ✅ | ✅ | ❌ | ❌ | ❌ |

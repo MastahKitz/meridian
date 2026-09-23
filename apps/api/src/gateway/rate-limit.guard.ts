@@ -22,7 +22,7 @@ export class RateLimitGuard implements CanActivate {
     const resolved = await this.keys.resolve(rawKey);
     if (!resolved) throw new UnauthorizedException('Invalid API key');
 
-    const limit = planFor(resolved.plan as PlanTier).rateLimitPerMinute;
+    const limit = resolved.rateLimitOverride ?? planFor(resolved.plan as PlanTier).rateLimitPerMinute;
 
     const window = Math.floor(Date.now() / 1000 / WINDOW_SECONDS);
     const bucket = `rl:${resolved.prefix}:${window}`;
