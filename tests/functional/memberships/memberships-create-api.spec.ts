@@ -1,0 +1,137 @@
+import { test } from '@playwright/test';
+import { withHookRequestContext } from '../utils/api.utils';
+import { generateAccessToken, assertCanLogin } from '../auth/login/login-api.flow';
+import { getTenantId } from '../utils/seed.utils';
+import { ownerLoginBody, adminLoginBody } from '../auth/login/login-api.data';
+import { sendCreateMembershipRequest } from './memberships-api.actions';
+import { assertCreateMembershipSuccess } from './memberships-api.assertions';
+import { randomEmail, DEFAULT_INVITE_PASSWORD } from './memberships-api.data';
+
+test.describe('memberships api - create', { tag: ['@memberships', '@api'] }, () => {
+  let ownerToken: string;
+  let adminToken: string;
+
+  test.beforeAll(async ({ playwright }) => {
+    await withHookRequestContext(playwright, async (request) => {
+      ownerToken = await generateAccessToken(request, ownerLoginBody);
+      adminToken = await generateAccessToken(request, adminLoginBody);
+    });
+  });
+
+  // docs/rbac-matrix.md / rbac.ts's ROLE_RANK: OWNER outranks every role, so
+  // an OWNER may grant any of the 5 roles, including another OWNER.
+  test('validate owner user can create a new member with role owner', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'OWNER' });
+    await assertCreateMembershipSuccess(response, 'OWNER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'OWNER' },
+    ]);
+  });
+
+  test('validate owner user can create a new member with role admin', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'ADMIN' });
+    await assertCreateMembershipSuccess(response, 'ADMIN');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'ADMIN' },
+    ]);
+  });
+
+  test('validate owner user can create a new member with role member', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'MEMBER' });
+    await assertCreateMembershipSuccess(response, 'MEMBER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'MEMBER' },
+    ]);
+  });
+
+  test('validate owner user can create a new member with role viewer', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'VIEWER' });
+    await assertCreateMembershipSuccess(response, 'VIEWER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'VIEWER' },
+    ]);
+  });
+
+  test('validate owner user can create a new member with role billing', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'BILLING' });
+    await assertCreateMembershipSuccess(response, 'BILLING');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'BILLING' },
+    ]);
+  });
+
+  // ADMIN creating a new member as OWNER is the escalation case covered in
+  // memberships-create-api-error.spec.ts (an assumption test, since it isn't
+  // actually blocked today) — not repeated here.
+  test('validate admin user can create a new member with role admin', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('acme'), { email, role: 'ADMIN' });
+    await assertCreateMembershipSuccess(response, 'ADMIN');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'ADMIN' },
+    ]);
+  });
+
+  test('validate admin user can create a new member with role member', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('acme'), { email, role: 'MEMBER' });
+    await assertCreateMembershipSuccess(response, 'MEMBER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'MEMBER' },
+    ]);
+  });
+
+  test('validate admin user can create a new member with role viewer', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('acme'), { email, role: 'VIEWER' });
+    await assertCreateMembershipSuccess(response, 'VIEWER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'VIEWER' },
+    ]);
+  });
+
+  test('validate admin user can create a new member with role billing', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, adminToken, getTenantId('acme'), { email, role: 'BILLING' });
+    await assertCreateMembershipSuccess(response, 'BILLING');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'BILLING' },
+    ]);
+  });
+
+  test('validate owner user can create a new member with a specified password', async ({ request }) => {
+    const email = randomEmail();
+    const password = 'CustomPass123!';
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email, role: 'MEMBER', password });
+    await assertCreateMembershipSuccess(response, 'MEMBER');
+
+    await assertCanLogin(request, { email, password }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'MEMBER' },
+    ]);
+  });
+
+  test('validate a new member defaults to role member when role is not specified', async ({ request }) => {
+    const email = randomEmail();
+    const response = await sendCreateMembershipRequest(request, ownerToken, getTenantId('acme'), { email });
+    await assertCreateMembershipSuccess(response, 'MEMBER');
+
+    await assertCanLogin(request, { email, password: DEFAULT_INVITE_PASSWORD }, [
+      { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'MEMBER' },
+    ]);
+  });
+
+});
