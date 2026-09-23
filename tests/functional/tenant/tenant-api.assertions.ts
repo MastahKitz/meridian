@@ -1,7 +1,7 @@
 import { APIResponse, expect } from '@playwright/test';
 import { assertResponseStatus, assertResponseBody } from '../utils/api.utils';
 import { getTenantId } from '../utils/seed.utils';
-import { TenantErrorResponseBody, TenantLimits, TenantResponseBody } from './tenant-get-api.data';
+import { TenantErrorResponseBody, TenantLimits, TenantResponseBody } from './tenant-api.data';
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
