@@ -33,9 +33,17 @@ elsewhere in the repo.
    **Independently-testable sub-features get a subfolder** — `auth/login/`, `auth/logout/`,
    `auth/refresh/` are each their own subfolder because they're reached and tested
    independently, not states of one shared flow, even though all three sit under one
-   `AuthController`. This is a deliberate call for `auth` specifically, not a rule that every
-   multi-route controller needs subfolders — a controller whose routes are only ever exercised
-   together stays flat.
+   `AuthController`. `tenant/rate-limit/` (A1) is the same call for `TenantsController`: the
+   override is reached and tested independently of the base `GET`/`PATCH /tenant`, not a state of
+   the same journey. This is a deliberate per-domain call, not a rule that every multi-route
+   controller needs subfolders — a controller whose routes are only ever exercised together stays
+   flat (`memberships/`, with its create/list/edit/delete all flat under one folder, is the
+   counter-example). A subfolder's own file set drops the domain prefix the same way `auth/login/`
+   does (`login-api.spec.ts`, not `auth-login-api.spec.ts`) — `rate-limit-override-set-api.spec.ts`,
+   not `tenant-rate-limit-override-set-api.spec.ts`. The remaining `<resource>-<verb>` base
+   (`rate-limit-override-set`) follows the same pattern as every flat-domain operation name
+   (`memberships-create`, `tenant-details`) — function names carry it the same way, verb last:
+   `sendRateLimitOverrideSetRequest`, not `sendSetRateLimitOverrideRequest`.
 
    **A read `.spec.ts`'s operation suffix says which shape of GET it is — `-details` for a
    single item, `-list` for a collection — never a bare `-get`.** `-get` doesn't distinguish the
