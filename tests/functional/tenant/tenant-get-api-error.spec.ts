@@ -25,6 +25,11 @@ test.describe('tenant api - get errors', { tag: ['@tenant', '@api', '@error'] },
     await assertInvalidTokenError(response);
   });
 
+  test('validate a user cannot view a tenant they are not a member of', async ({ request }) => {
+    const response = await sendGetTenantRequest(request, ownerToken, getTenantId('northwind'));
+    await assertNotMemberOfTenantError(response);
+  });
+
   test('validate tenant settings cannot be viewed without an access token', async ({ request }) => {
     const response = await sendGetTenantRequest(request, undefined, getTenantId('acme'));
     await assertMissingTokenError(response);
@@ -33,11 +38,6 @@ test.describe('tenant api - get errors', { tag: ['@tenant', '@api', '@error'] },
   test('validate tenant settings cannot be viewed without a tenant id', async ({ request }) => {
     const response = await sendGetTenantRequest(request, ownerToken);
     await assertMissingTenantIdError(response);
-  });
-
-  test('validate a user cannot view a tenant they are not a member of', async ({ request }) => {
-    const response = await sendGetTenantRequest(request, ownerToken, getTenantId('northwind'));
-    await assertNotMemberOfTenantError(response);
   });
 
 });
