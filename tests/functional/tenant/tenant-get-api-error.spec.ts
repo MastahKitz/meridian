@@ -3,13 +3,13 @@ import { withHookRequestContext } from '../utils/api.utils';
 import { generateAccessToken } from '../auth/login/login-api.flow';
 import { getTenantId } from '../utils/seed.utils';
 import { ownerLoginBody } from '../auth/login/login-api.data';
-import { sendGetTenantRequest } from './tenant-get-api.actions';
+import { sendGetTenantRequest } from './tenant-api.actions';
 import {
   assertInvalidTokenError,
   assertMissingTokenError,
   assertMissingTenantIdError,
   assertNotMemberOfTenantError,
-} from './tenant-get-api.assertions';
+} from './tenant-api.assertions';
 
 test.describe('tenant api - get errors', { tag: ['@tenant', '@api', '@error'] }, () => {
   let ownerToken: string;

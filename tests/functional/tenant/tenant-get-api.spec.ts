@@ -10,9 +10,9 @@ import {
   northwindOwnerLoginBody,
   sakuraOwnerLoginBody,
 } from '../auth/login/login-api.data';
-import { sendGetTenantRequest } from './tenant-get-api.actions';
-import { assertGetTenantSuccess } from './tenant-get-api.assertions';
-import { PLAN_LIMITS } from './tenant-get-api.data';
+import { sendGetTenantRequest } from './tenant-api.actions';
+import { assertGetTenantSuccess } from './tenant-api.assertions';
+import { PLAN_LIMITS } from './tenant-api.data';
 
 test.describe('tenant api - get', { tag: ['@tenant', '@api'] }, () => {
 
