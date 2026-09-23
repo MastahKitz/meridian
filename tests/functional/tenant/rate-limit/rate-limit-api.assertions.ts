@@ -18,6 +18,20 @@ export async function assertRateLimitOverrideSetSuccess(response: APIResponse, t
   }, { exact: true });
 }
 
+export async function assertRateLimitOverrideClearSuccess(response: APIResponse, tenant: ExpectedTenantDetails) {
+  assertResponseStatus(response, 200);
+  const body: RateLimitOverrideSetResponseBody = await response.json();
+  assertResponseBody(body, {
+    id: getTenantId(tenant.slug),
+    name: tenant.name,
+    slug: tenant.slug,
+    plan: tenant.plan,
+    timezone: tenant.timezone,
+    suspended: tenant.suspended,
+    limits: tenant.limits,
+  }, { exact: true });
+}
+
 export async function assertRateLimitCeilingExceededError(response: APIResponse, ceiling: number, plan: string) {
   assertResponseStatus(response, 400);
   const body: TenantErrorResponseBody = await response.json();

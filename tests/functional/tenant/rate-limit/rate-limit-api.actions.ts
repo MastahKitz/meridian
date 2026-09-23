@@ -19,3 +19,15 @@ export async function sendRateLimitOverrideSetRequest(
     body,
   });
 }
+
+export async function sendRateLimitOverrideClearRequest(request: APIRequestContext, accessToken?: string, tenantId?: string) {
+  const headers: Record<string, string> = {};
+  if (accessToken !== undefined) headers['Authorization'] = `Bearer ${accessToken}`;
+  if (tenantId !== undefined) headers['x-tenant-id'] = tenantId;
+
+  return sendApiRequest(request, {
+    method: 'DELETE',
+    url: 'api/v1/tenant/rate-limit',
+    headers,
+  });
+}

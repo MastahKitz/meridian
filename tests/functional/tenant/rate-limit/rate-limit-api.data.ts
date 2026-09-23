@@ -12,16 +12,26 @@ export const rateLimitMutatingScaleTenantDetails: ExpectedTenantDetails = {
   name: 'rate-limit-mutating-scale', slug: 'rate-limit-mutating-scale', plan: 'SCALE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.SCALE,
 };
 
-// DELETE /tenant/rate-limit's own tenant — kept separate from the three
+// DELETE /tenant/rate-limit's own tenants — kept separate from the three
 // above so set and clear (both @mutating) never race each other's writes to
-// the same tenant row (see scripts/seed.js).
-export const rateLimitMutatingClearTenantDetails: ExpectedTenantDetails = {
-  name: 'rate-limit-mutating-clear', slug: 'rate-limit-mutating-clear', plan: 'FREE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.FREE,
+// the same tenant row (see scripts/seed.js). Still one per tier: clearing
+// has no ceiling logic, but what it resets *to* is still plan-dependent.
+export const rateLimitMutatingClearFreeTenantDetails: ExpectedTenantDetails = {
+  name: 'rate-limit-mutating-clear-free', slug: 'rate-limit-mutating-clear-free', plan: 'FREE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.FREE,
 };
 
-// A1: PATCH /tenant/rate-limit's own response has no created_at (its RETURNING
-// clause doesn't select it) — a different shape from TenantResponseBody, not
-// a subset of it.
+export const rateLimitMutatingClearGrowthTenantDetails: ExpectedTenantDetails = {
+  name: 'rate-limit-mutating-clear-growth', slug: 'rate-limit-mutating-clear-growth', plan: 'GROWTH', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.GROWTH,
+};
+
+export const rateLimitMutatingClearScaleTenantDetails: ExpectedTenantDetails = {
+  name: 'rate-limit-mutating-clear-scale', slug: 'rate-limit-mutating-clear-scale', plan: 'SCALE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.SCALE,
+};
+
+// A1: PATCH/DELETE /tenant/rate-limit's own response has no created_at
+// (neither RETURNING clause selects it) — a different shape from
+// TenantResponseBody, not a subset of it. Shared by set and clear: both
+// return the exact same {id, name, slug, plan, timezone, suspended, limits}.
 export interface RateLimitOverrideSetRequestBody {
   rateLimitPerMinute?: number;
 }

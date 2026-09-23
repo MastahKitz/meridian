@@ -69,12 +69,14 @@ async function seed({ large = false } = {}) {
     { name: 'rate-limit-mutating-free', slug: 'rate-limit-mutating-free', plan: 'FREE', timezone: 'UTC' },
     { name: 'rate-limit-mutating-growth', slug: 'rate-limit-mutating-growth', plan: 'GROWTH', timezone: 'UTC' },
     { name: 'rate-limit-mutating-scale', slug: 'rate-limit-mutating-scale', plan: 'SCALE', timezone: 'UTC' },
-    // DELETE /tenant/rate-limit's own tenant — separate from the three above
-    // so the set and clear specs, both @mutating, can never race each
-    // other's writes to the same tenant row. Clearing has no plan-ceiling
-    // logic, so one tenant (plan choice arbitrary) is enough, unlike set's
-    // one-per-tier need.
-    { name: 'rate-limit-mutating-clear', slug: 'rate-limit-mutating-clear', plan: 'FREE', timezone: 'UTC' },
+    // DELETE /tenant/rate-limit's own tenants — separate from the three above
+    // so the set and clear specs, both @mutating, can never race each other's
+    // writes to the same tenant row. Clearing has no ceiling logic, but what
+    // it resets *to* is still plan-dependent (FREE 100 / GROWTH 1,000 /
+    // SCALE 5,000 rpm default), so this still needs one tenant per tier.
+    { name: 'rate-limit-mutating-clear-free', slug: 'rate-limit-mutating-clear-free', plan: 'FREE', timezone: 'UTC' },
+    { name: 'rate-limit-mutating-clear-growth', slug: 'rate-limit-mutating-clear-growth', plan: 'GROWTH', timezone: 'UTC' },
+    { name: 'rate-limit-mutating-clear-scale', slug: 'rate-limit-mutating-clear-scale', plan: 'SCALE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -107,14 +109,18 @@ async function seed({ large = false } = {}) {
     ['rate-limit-mutating-growth', 'rate-limit-admin@mutating.test', 'ADMIN'],
     ['rate-limit-mutating-scale', 'rate-limit-owner@mutating.test', 'OWNER'],
     ['rate-limit-mutating-scale', 'rate-limit-admin@mutating.test', 'ADMIN'],
-    // All 5 roles — the clear spec's own RBAC-negative tests (DELETE is
-    // OWNER-only) stay scoped to this tenant rather than reaching into
-    // rate-limit-mutating-free.
-    ['rate-limit-mutating-clear', 'rate-limit-owner@mutating.test', 'OWNER'],
-    ['rate-limit-mutating-clear', 'rate-limit-admin@mutating.test', 'ADMIN'],
-    ['rate-limit-mutating-clear', 'rate-limit-member@mutating.test', 'MEMBER'],
-    ['rate-limit-mutating-clear', 'rate-limit-viewer@mutating.test', 'VIEWER'],
-    ['rate-limit-mutating-clear', 'rate-limit-billing@mutating.test', 'BILLING'],
+    // All 5 roles on the free tier — the clear spec's own RBAC-negative
+    // tests (DELETE is OWNER-only) stay scoped to this tenant rather than
+    // reaching into rate-limit-mutating-free (the *set* spec's tenant).
+    ['rate-limit-mutating-clear-free', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-clear-free', 'rate-limit-admin@mutating.test', 'ADMIN'],
+    ['rate-limit-mutating-clear-free', 'rate-limit-member@mutating.test', 'MEMBER'],
+    ['rate-limit-mutating-clear-free', 'rate-limit-viewer@mutating.test', 'VIEWER'],
+    ['rate-limit-mutating-clear-free', 'rate-limit-billing@mutating.test', 'BILLING'],
+    ['rate-limit-mutating-clear-growth', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-clear-growth', 'rate-limit-admin@mutating.test', 'ADMIN'],
+    ['rate-limit-mutating-clear-scale', 'rate-limit-owner@mutating.test', 'OWNER'],
+    ['rate-limit-mutating-clear-scale', 'rate-limit-admin@mutating.test', 'ADMIN'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
