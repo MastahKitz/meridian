@@ -27,6 +27,12 @@ async function seed({ large = false } = {}) {
     'owner@northwind.test',
     'admin@northwind.test',
     'owner@sakura.test',
+    // memberships-create's own scratch users (conventions.md rule 9): not
+    // owner@acme.test/admin@acme.test, so this tenant's membership never
+    // forces an update to login-api.spec.ts's exact-match tenant lists for
+    // the Acme users.
+    'memberships-owner@mutating.test',
+    'memberships-admin@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -42,7 +48,10 @@ async function seed({ large = false } = {}) {
     { name: 'Acme Corp', slug: 'acme', plan: 'FREE', timezone: 'UTC' },
     { name: 'Northwind Traders', slug: 'northwind', plan: 'GROWTH', timezone: 'America/New_York' },
     { name: 'Sakura KK', slug: 'sakura', plan: 'SCALE', timezone: 'Asia/Tokyo' },
-    { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', timezone: 'UTC' },
+    // conventions.md rule 9: every domain needing @mutating coverage gets its
+    // own dedicated scratch tenant, named `<domain>-mutating` — never shared
+    // across domains.
+    { name: 'memberships-mutating', slug: 'memberships-mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -64,8 +73,8 @@ async function seed({ large = false } = {}) {
     ['northwind', 'admin@northwind.test', 'ADMIN'],
     ['northwind', 'member@acme.test', 'VIEWER'],
     ['sakura', 'owner@sakura.test', 'OWNER'],
-    ['mutating', 'owner@acme.test', 'OWNER'],
-    ['mutating', 'admin@acme.test', 'ADMIN'],
+    ['memberships-mutating', 'memberships-owner@mutating.test', 'OWNER'],
+    ['memberships-mutating', 'memberships-admin@mutating.test', 'ADMIN'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
