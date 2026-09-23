@@ -58,12 +58,11 @@ const runNumber = Number(GITHUB_RUN_NUMBER) || 0;
 const repoUrl = GITHUB_REPOSITORY ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}` : '';
 const triggeredBy = GITHUB_EVENT_NAME === 'workflow_dispatch' ? 'Manual' : 'CI';
 
-// The mutating / non-mutating split is a built-in phase every run applies, not a
-// choice — so only surface the extra @tag filter typed into a manual run (blank
-// on push events, where the whole suite runs in each phase).
+// Only surface the @tag filter typed into a manual run (blank on push events,
+// where the whole suite runs).
 const extraTags = QA_TAG.split(/[\s,|]+/)
   .map((t) => t.trim())
-  .filter((t) => t && !/^@?(non-)?mutating$/i.test(t))
+  .filter(Boolean)
   .map((t) => (t.startsWith('@') ? t : `@${t}`));
 
 function readStats() {
