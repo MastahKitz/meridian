@@ -15,7 +15,10 @@ test.describe('login api', { tag: ['@auth', '@login', '@api'] }, () => {
     const response = await sendLoginRequest(request, ownerLoginBody);
     await assertLoginSuccess(response, {
       email: ownerLoginBody.email,
-      tenants: [{ name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'OWNER' }],
+      tenants: [
+        { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'OWNER' },
+        { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'OWNER' },
+      ],
     });
   });
 
@@ -23,12 +26,13 @@ test.describe('login api', { tag: ['@auth', '@login', '@api'] }, () => {
     const response = await sendLoginRequest(request, adminLoginBody);
     await assertLoginSuccess(response, {
       email: adminLoginBody.email,
-      tenants: [{ name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'ADMIN' }],
+      tenants: [
+        { name: 'Acme Corp', slug: 'acme', plan: 'FREE', role: 'ADMIN' },
+        { name: 'Mutating Co', slug: 'mutating', plan: 'FREE', role: 'ADMIN' },
+      ],
     });
   });
 
-  // member@acme.test is the deliberate cross-tenant seed case — also VIEWER in
-  // Northwind, per README — so it holds two memberships, not one.
   test('validate member user can login', async ({ request }) => {
     const response = await sendLoginRequest(request, memberLoginBody);
     await assertLoginSuccess(response, {
