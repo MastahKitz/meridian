@@ -130,7 +130,7 @@ jobs:
         run: docker compose down -v
 
       # ---------------------------------------------------------------------
-      # Publish this run to the GitHub Pages dashboard: last 5 runs with their
+      # Publish this run to the GitHub Pages dashboard: last 10 runs with their
       # counts and a link to each run's full HTML report, served inline so there
       # is nothing to download. Runs even when tests failed, so the dashboard
       # always reflects the latest state.
@@ -152,7 +152,7 @@ jobs:
         run: node scripts/build-report-dashboard.js test-report/results.json test-report gh-pages public
 
       # Force-push the assembled ./public wholesale — the branch only ever holds
-      # the last 5 runs, so purging is automatic.
+      # the last 10 runs, so purging is automatic.
       - name: Publish dashboard to gh-pages
         if: always()
         working-directory: public
