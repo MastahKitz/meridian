@@ -15,6 +15,8 @@ export const adminLoginBody: LoginRequestBody = { email: 'admin@acme.test', pass
 export const memberLoginBody: LoginRequestBody = { email: 'member@acme.test', password };
 export const viewerLoginBody: LoginRequestBody = { email: 'viewer@acme.test', password };
 export const billingLoginBody: LoginRequestBody = { email: 'billing@acme.test', password };
+export const northwindOwnerLoginBody: LoginRequestBody = { email: 'owner@northwind.test', password };
+export const sakuraOwnerLoginBody: LoginRequestBody = { email: 'owner@sakura.test', password };
 
 export interface LoginResponseBody {
   accessToken: string;
