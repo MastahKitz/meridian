@@ -55,4 +55,37 @@ test.describe('rate limit override set api', { tag: ['@tenant', '@rate-limit', '
     await assertTenantDetailsCorrect(request, ownerToken, tenantId, { ...tenant, limits: { ...tenant.limits, rateLimitPerMinute } });
   });
 
+  test('validate owner user can set a rate limit override exactly at the free plan ceiling', async ({ request }) => {
+    const tenant = rateLimitMutatingFreeTenantDetails;
+    const rateLimitPerMinute = RATE_LIMIT_OVERRIDE_CEILINGS.FREE;
+    const tenantId = getTenantId(tenant.slug);
+
+    const patchResponse = await sendRateLimitOverrideSetRequest(request, ownerToken, tenantId, { rateLimitPerMinute });
+    await assertRateLimitOverrideSetSuccess(patchResponse, tenant, rateLimitPerMinute);
+
+    await assertTenantDetailsCorrect(request, ownerToken, tenantId, { ...tenant, limits: { ...tenant.limits, rateLimitPerMinute } });
+  });
+
+  test('validate owner user can set a rate limit override exactly at the growth plan ceiling', async ({ request }) => {
+    const tenant = rateLimitMutatingGrowthTenantDetails;
+    const rateLimitPerMinute = RATE_LIMIT_OVERRIDE_CEILINGS.GROWTH;
+    const tenantId = getTenantId(tenant.slug);
+
+    const patchResponse = await sendRateLimitOverrideSetRequest(request, ownerToken, tenantId, { rateLimitPerMinute });
+    await assertRateLimitOverrideSetSuccess(patchResponse, tenant, rateLimitPerMinute);
+
+    await assertTenantDetailsCorrect(request, ownerToken, tenantId, { ...tenant, limits: { ...tenant.limits, rateLimitPerMinute } });
+  });
+
+  test('validate owner user can set a rate limit override exactly at the scale plan ceiling', async ({ request }) => {
+    const tenant = rateLimitMutatingScaleTenantDetails;
+    const rateLimitPerMinute = RATE_LIMIT_OVERRIDE_CEILINGS.SCALE;
+    const tenantId = getTenantId(tenant.slug);
+
+    const patchResponse = await sendRateLimitOverrideSetRequest(request, ownerToken, tenantId, { rateLimitPerMinute });
+    await assertRateLimitOverrideSetSuccess(patchResponse, tenant, rateLimitPerMinute);
+
+    await assertTenantDetailsCorrect(request, ownerToken, tenantId, { ...tenant, limits: { ...tenant.limits, rateLimitPerMinute } });
+  });
+
 });
