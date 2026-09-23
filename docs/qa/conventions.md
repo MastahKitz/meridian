@@ -33,9 +33,17 @@ elsewhere in the repo.
    **Independently-testable sub-features get a subfolder** — `auth/login/`, `auth/logout/`,
    `auth/refresh/` are each their own subfolder because they're reached and tested
    independently, not states of one shared flow, even though all three sit under one
-   `AuthController`. This is a deliberate call for `auth` specifically, not a rule that every
-   multi-route controller needs subfolders — a controller whose routes are only ever exercised
-   together stays flat.
+   `AuthController`. `tenant/rate-limit/` (A1) is the same call for `TenantsController`: the
+   override is reached and tested independently of the base `GET`/`PATCH /tenant`, not a state of
+   the same journey. This is a deliberate per-domain call, not a rule that every multi-route
+   controller needs subfolders — a controller whose routes are only ever exercised together stays
+   flat (`memberships/`, with its create/list/edit/delete all flat under one folder, is the
+   counter-example). A subfolder's own file set drops the domain prefix the same way `auth/login/`
+   does (`login-api.spec.ts`, not `auth-login-api.spec.ts`) — `rate-limit-override-set-api.spec.ts`,
+   not `tenant-rate-limit-override-set-api.spec.ts`. The remaining `<resource>-<verb>` base
+   (`rate-limit-override-set`) follows the same pattern as every flat-domain operation name
+   (`memberships-create`, `tenant-details`) — function names carry it the same way, verb last:
+   `sendRateLimitOverrideSetRequest`, not `sendSetRateLimitOverrideRequest`.
 
    **A read `.spec.ts`'s operation suffix says which shape of GET it is — `-details` for a
    single item, `-list` for a collection — never a bare `-get`.** `-get` doesn't distinguish the
@@ -136,11 +144,28 @@ elsewhere in the repo.
    email in `scripts/seed.js` (`.test` is the IANA-reserved TLD for exactly this, guaranteed to
    never resolve to a real domain). A shared `@mutating.test` suffix across every domain's users
    makes a scratch user identifiable as scratch at a glance; the `<domain>-` prefix says which
-   domain owns it. Because isolation now lives in the *data* (each mutating spec only ever
+   domain owns it. A domain needing more than one scratch tenant (A1's rate-limit override: one
+   per plan tier, since the override ceiling is plan-dependent) extends the pattern to
+   `<domain>-mutating-<qualifier>` (`rate-limit-mutating-free/growth/scale`) — the users stay
+   shared across that domain's own tenants (`rate-limit-owner@mutating.test`), since they're all
+   the same domain's scratch data. Because isolation now lives in the *data* (each mutating spec only ever
    touches its own scratch tenant), the suite runs as a single `playwright test` invocation —
    no phase split, no separate `mutating`/`non-mutating` projects. `@mutating` is kept purely as
    a selective-run filter (`--grep @mutating` to run only mutating specs, `--grep-invert
    @mutating` for a fast read-only smoke check), not because CI requires it.
+
+   **Every domain that needs `@mutating` coverage gets its own dedicated scratch tenant(s) and
+   users — never shared with another domain's mutating tests.** `@mutating` phase-isolates
+   mutating specs from non-mutating exact-match reads (above), but says nothing about two
+   *different* mutating domains racing writes against the same tenant row or audit log if they
+   shared one — the same class of problem from the opposite direction. Naming convention: tenant
+   `name`/`slug` is `<domain>-mutating` (e.g. `memberships-mutating`); users are
+   `<domain>-owner@mutating.test` / `<domain>-admin@mutating.test` (e.g.
+   `memberships-owner@mutating.test`) — `.test` rather than `.com`, matching every other seeded
+   email in `scripts/seed.js` (`.test` is the IANA-reserved TLD for exactly this, guaranteed to
+   never resolve to a real domain). A shared `@mutating.test` suffix across every domain's users
+   makes a scratch user identifiable as scratch at a glance; the `<domain>-` prefix says which
+   domain owns it.
 
 10. **`test.describe.configure({ mode: 'serial' })`** whenever tests depend on state left by
     earlier tests in the same file. Inter-test dependency without serial mode is a bug waiting

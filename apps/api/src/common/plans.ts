@@ -15,3 +15,16 @@ export const PLANS: Record<PlanTier, PlanDefinition> = {
 export function planFor(tier: PlanTier): PlanDefinition {
   return PLANS[tier] ?? PLANS.FREE;
 }
+
+// A1: the ceiling a tenant's rate-limit override may not exceed — distinct
+// from PLANS' own rateLimitPerMinute default (the starting point before any
+// override is applied).
+export const RATE_LIMIT_OVERRIDE_CEILINGS: Record<PlanTier, number> = {
+  FREE: 500,
+  GROWTH: 5_000,
+  SCALE: 25_000,
+};
+
+export function rateLimitOverrideCeilingFor(tier: PlanTier): number {
+  return RATE_LIMIT_OVERRIDE_CEILINGS[tier] ?? RATE_LIMIT_OVERRIDE_CEILINGS.FREE;
+}
