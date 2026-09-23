@@ -51,6 +51,11 @@ export function randomEmail(): string {
   return `automation-${randomUUID()}@acme.test`;
 }
 
+// memberships.controller.ts's invite() hardcodes this fallback
+// (body.password || 'ChangeMe123!') when the invited email doesn't already
+// have an account — see the "invite vs create" finding shared separately.
+export const DEFAULT_INVITE_PASSWORD = 'ChangeMe123!';
+
 // Same shape as auth's/tenant's error bodies (Nest's default HttpException),
 // own literal type rather than a shared one — these messages (email/role
 // validation, the OWNER/ADMIN role gate) are memberships-specific, unlike
