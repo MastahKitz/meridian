@@ -129,6 +129,19 @@ elsewhere in the repo.
    spec can leave a row transiently visible to a concurrently-running list assertion in a
    different worker.
 
+   **Every domain that needs `@mutating` coverage gets its own dedicated scratch tenant(s) and
+   users — never shared with another domain's mutating tests.** `@mutating` phase-isolates
+   mutating specs from non-mutating exact-match reads (above), but says nothing about two
+   *different* mutating domains racing writes against the same tenant row or audit log if they
+   shared one — the same class of problem from the opposite direction. Naming convention: tenant
+   `name`/`slug` is `<domain>-mutating` (e.g. `memberships-mutating`); users are
+   `<domain>-owner@mutating.test` / `<domain>-admin@mutating.test` (e.g.
+   `memberships-owner@mutating.test`) — `.test` rather than `.com`, matching every other seeded
+   email in `scripts/seed.js` (`.test` is the IANA-reserved TLD for exactly this, guaranteed to
+   never resolve to a real domain). A shared `@mutating.test` suffix across every domain's users
+   makes a scratch user identifiable as scratch at a glance; the `<domain>-` prefix says which
+   domain owns it.
+
 10. **`test.describe.configure({ mode: 'serial' })`** whenever tests depend on state left by
     earlier tests in the same file. Inter-test dependency without serial mode is a bug waiting
     to happen under parallel execution.
