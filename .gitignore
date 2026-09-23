@@ -6,4 +6,8 @@ dist/
 test-results/
 test-report/
 playwright-report/
+blob-report/
+blob-report-merged/
+public/
+gh-pages/
 .seed-output.json
