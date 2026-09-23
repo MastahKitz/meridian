@@ -1,4 +1,6 @@
 import { Pool } from 'pg';
+import fs from 'fs';
+import path from 'path';
 // scripts/seed.js is the single source of truth for fixture data — reused here
 // rather than reimplemented, so the manual `npm run seed` and the automated test
 // setup can never drift apart.
@@ -15,5 +17,13 @@ export default async function globalSetup() {
     await pool.end();
   }
 
-  await seed({ large: process.env.SEED_LARGE === 'true' });
+  const { tenants } = await seed({ large: process.env.SEED_LARGE === 'true' });
+
+  // Tenant ids are fresh UUIDs every reseed (see utils/seed.utils.ts) — written
+  // here once, right after the ids are known, so tests can read a slug's real
+  // id without a network round trip.
+  fs.writeFileSync(
+    path.join(__dirname, 'config/.seed-output.json'),
+    JSON.stringify({ tenants }, null, 2),
+  );
 }

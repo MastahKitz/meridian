@@ -6,3 +6,4 @@ dist/
 test-results/
 test-report/
 playwright-report/
+.seed-output.json
