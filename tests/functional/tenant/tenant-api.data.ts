@@ -26,3 +26,28 @@ export const PLAN_LIMITS: Record<string, TenantLimits> = {
   GROWTH: { rateLimitPerMinute: 1_000, monthlyQuota: 500_000, overageRatePerRequest: 0.001 },
   SCALE: { rateLimitPerMinute: 5_000, monthlyQuota: 5_000_000, overageRatePerRequest: 0.0005 },
 };
+
+// Literal fields only — id and created_at are server-generated / per-run, so
+// the assertion layer attaches its own matchers for those rather than this
+// file holding fake ones.
+export interface ExpectedTenantDetails {
+  name: string;
+  slug: string;
+  plan: string;
+  timezone: string;
+  suspended: boolean;
+  limits: TenantLimits;
+}
+
+// scripts/seed.js's tenantSpecs is the source of truth for name/slug/plan/timezone.
+export const acmeTenantDetails: ExpectedTenantDetails = {
+  name: 'Acme Corp', slug: 'acme', plan: 'FREE', timezone: 'UTC', suspended: false, limits: PLAN_LIMITS.FREE,
+};
+
+export const northwindTenantDetails: ExpectedTenantDetails = {
+  name: 'Northwind Traders', slug: 'northwind', plan: 'GROWTH', timezone: 'America/New_York', suspended: false, limits: PLAN_LIMITS.GROWTH,
+};
+
+export const sakuraTenantDetails: ExpectedTenantDetails = {
+  name: 'Sakura KK', slug: 'sakura', plan: 'SCALE', timezone: 'Asia/Tokyo', suspended: false, limits: PLAN_LIMITS.SCALE,
+};

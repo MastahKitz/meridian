@@ -46,7 +46,7 @@ test.describe('memberships api - get', { tag: ['@memberships', '@api'] }, () => 
     await assertGetMembershipsSuccess(response, acmeMembers);
   });
 
-  test('validate member user can list members under different tenant id', async ({ request }) => {
+  test('validate member user can list members under different tenant id it belongs to', async ({ request }) => {
     const memberToken = await generateAccessToken(request, memberLoginBody);
     const response = await sendGetMembershipsRequest(request, memberToken, getTenantId('northwind'));
     await assertGetMembershipsSuccess(response, northwindMembers);

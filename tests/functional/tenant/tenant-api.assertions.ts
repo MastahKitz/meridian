@@ -1,21 +1,11 @@
 import { APIResponse, expect } from '@playwright/test';
 import { assertResponseStatus, assertResponseBody } from '../utils/api.utils';
 import { getTenantId } from '../utils/seed.utils';
-import { TenantLimits, TenantResponseBody } from './tenant-api.data';
+import { ExpectedTenantDetails, TenantResponseBody } from './tenant-api.data';
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-export async function assertGetTenantSuccess(
-  response: APIResponse,
-  params: {
-    name: string;
-    slug: string;
-    plan: string;
-    timezone: string;
-    suspended: boolean;
-    limits: TenantLimits;
-  },
-) {
+export async function assertGetTenantSuccess(response: APIResponse, params: ExpectedTenantDetails) {
   assertResponseStatus(response, 200);
   const body: TenantResponseBody = await response.json();
   assertResponseBody(body, {
