@@ -5,7 +5,7 @@ import { ExpectedTenantDetails, TenantResponseBody } from './tenant-api.data';
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
-export async function assertGetTenantSuccess(response: APIResponse, params: ExpectedTenantDetails) {
+export async function assertTenantDetailsSuccess(response: APIResponse, params: ExpectedTenantDetails) {
   assertResponseStatus(response, 200);
   const body: TenantResponseBody = await response.json();
   assertResponseBody(body, {

@@ -13,7 +13,7 @@ const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 // memberships.controller.ts orders by u.email ascending — callers pass members
 // in that exact order, and the full array is asserted (not just membership),
 // so a leaked row (wrong tenant) or a missing one is caught either way.
-export async function assertGetMembershipsSuccess(response: APIResponse, expectedMembers: ExpectedMember[]) {
+export async function assertMembershipsListSuccess(response: APIResponse, expectedMembers: ExpectedMember[]) {
   assertResponseStatus(response, 200);
   const body: MembershipResponseItem[] = await response.json();
   assertResponseBody(body, expectedMembers.map((m) => ({
@@ -25,7 +25,7 @@ export async function assertGetMembershipsSuccess(response: APIResponse, expecte
   })), { exact: true });
 }
 
-export async function assertCreateMembershipSuccess(response: APIResponse, expectedRole: string) {
+export async function assertMembershipCreateSuccess(response: APIResponse, expectedRole: string) {
   assertResponseStatus(response, 201);
   const body: CreateMembershipResponseBody = await response.json();
   assertResponseBody(body, {
