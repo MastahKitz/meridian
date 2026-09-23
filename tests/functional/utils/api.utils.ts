@@ -35,7 +35,7 @@ export function assertResponseStatus(response: APIResponse, expectedStatus: numb
   expect.soft(response.status()).toBe(expectedStatus);
 }
 
-export function assertResponseBody(actual: unknown, expected: Record<string, unknown>, options?: { exact?: boolean }) {
+export function assertResponseBody(actual: unknown, expected: Record<string, unknown> | unknown[], options?: { exact?: boolean }) {
   if (options?.exact) {
     expect.soft(actual).toEqual(expected);
   } else {

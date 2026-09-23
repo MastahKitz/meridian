@@ -9,7 +9,7 @@ import {
   assertMissingTokenError,
   assertMissingTenantIdError,
   assertNotMemberOfTenantError,
-} from './tenant-api.assertions';
+} from '../auth/auth-api.assertions';
 
 test.describe('tenant api - get errors', { tag: ['@tenant', '@api', '@error'] }, () => {
   let ownerToken: string;

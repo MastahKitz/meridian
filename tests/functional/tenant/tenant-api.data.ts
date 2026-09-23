@@ -26,11 +26,3 @@ export const PLAN_LIMITS: Record<string, TenantLimits> = {
   GROWTH: { rateLimitPerMinute: 1_000, monthlyQuota: 500_000, overageRatePerRequest: 0.001 },
   SCALE: { rateLimitPerMinute: 5_000, monthlyQuota: 5_000_000, overageRatePerRequest: 0.0005 },
 };
-
-// Same shape as auth's error bodies (Nest's default HttpException), own literal
-// type rather than a shared one — see tenant-api.assertions.ts.
-export interface TenantErrorResponseBody {
-  message: string;
-  error: string;
-  statusCode: number;
-}
