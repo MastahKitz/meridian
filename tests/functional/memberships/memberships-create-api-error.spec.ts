@@ -24,7 +24,7 @@ import {
   assertNotMemberOfTenantError,
 } from '../auth/auth-api.assertions';
 
-test.describe('memberships api - create errors', { tag: ['@memberships', '@api', '@error'] }, () => {
+test.describe('memberships api - create errors', { tag: ['@memberships', '@api', '@error', '@mutating'] }, () => {
   let ownerToken: string;
   let adminToken: string;
   let memberToken: string;

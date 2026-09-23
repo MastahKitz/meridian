@@ -7,7 +7,7 @@ import { sendCreateMembershipRequest } from './memberships-api.actions';
 import { assertCreateMembershipSuccess } from './memberships-api.assertions';
 import { randomEmail, DEFAULT_INVITE_PASSWORD } from './memberships-api.data';
 
-test.describe('memberships api - create', { tag: ['@memberships', '@api'] }, () => {
+test.describe('memberships api - create', { tag: ['@memberships', '@api', '@mutating'] }, () => {
   let ownerToken: string;
   let adminToken: string;
 
