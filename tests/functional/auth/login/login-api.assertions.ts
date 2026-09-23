@@ -1,5 +1,6 @@
 import { APIResponse, expect } from '@playwright/test';
 import { assertResponseStatus, assertResponseBody } from '../../utils/api.utils';
+import { getTenantId } from '../../utils/seed.utils';
 import { ExpectedTenantMembership, LoginErrorResponseBody, LoginResponseBody } from './login-api.data';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,7 +22,9 @@ export async function assertLoginSuccess(
     // randomBytes(32).toString('hex') — see auth.service.ts.
     refreshToken: expect.stringMatching(/^[0-9a-f]{64}$/),
     user: { id: expect.stringMatching(UUID), email: params.email },
-    tenants: params.tenants.map((t) => ({ id: expect.stringMatching(UUID), ...t })),
+    // tenant id is known exactly for this run (global.setup.ts's seed output),
+    // so it's asserted literally rather than just by shape.
+    tenants: params.tenants.map((t) => ({ id: getTenantId(t.slug), ...t })),
   }, { exact: true });
 }
 
