@@ -83,7 +83,19 @@ elsewhere in the repo.
    run independently (`--grep @auth` vs `--grep @login`). **Error specs add `@error` on top** —
    `['@auth', '@login', '@api', '@error']` — another addition not in the source framework, so
    the full error-path suite can be run in isolation (`--grep @error`) as its own CI phase or
-   quick sanity check.
+   quick sanity check. **A spec whose tests write shared domain data — create, edit, delete, or
+   anything else that mutates real server-side data rather than only reading it — also carries
+   `@mutating`** (the source framework has this same tag, on this same rule): `['@memberships',
+   '@api', '@mutating']` in `memberships-create-api.spec.ts`. Tag the whole `describe` block even
+   if only one test in it can actually write data — e.g. an otherwise all-403 `-error.spec.ts`
+   with one assumption-test that currently succeeds because of a real implementation bug (see
+   `memberships-create-api-error.spec.ts`) — since CI schedules by file/describe, not by
+   individual test. CI is expected to run `@mutating` specs as their own phase, isolated from
+   specs asserting exact-match lists against the same shared data, via **two separate
+   `playwright test` invocations rather than a project `dependencies` gate** — reseeding between
+   full runs (`global.setup.ts`) doesn't help *within* one run, since a worker running a mutating
+   spec can leave a row transiently visible to a concurrently-running list assertion in a
+   different worker.
 
 10. **`test.describe.configure({ mode: 'serial' })`** whenever tests depend on state left by
     earlier tests in the same file. Inter-test dependency without serial mode is a bug waiting
