@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 export interface MembershipResponseItem {
   id: string;
   role: string;
@@ -31,3 +33,30 @@ export const northwindMembers: ExpectedMember[] = [
   { email: 'member@acme.test', role: 'VIEWER' },
   { email: 'owner@northwind.test', role: 'OWNER' },
 ];
+
+export interface CreateMembershipRequestBody {
+  email: string;
+  role?: string;
+  password?: string;
+}
+
+// memberships.controller.ts's invite() returns only the new membership row
+// (RETURNING id, role) — not the user or tenant it belongs to.
+export interface CreateMembershipResponseBody {
+  id: string;
+  role: string;
+}
+
+export function randomEmail(): string {
+  return `automation-${randomUUID()}@acme.test`;
+}
+
+// Same shape as auth's/tenant's error bodies (Nest's default HttpException),
+// own literal type rather than a shared one — these messages (email/role
+// validation, the OWNER/ADMIN role gate) are memberships-specific, unlike
+// JwtGuard's domain-agnostic errors in auth/auth-api.assertions.ts.
+export interface MembershipErrorResponseBody {
+  message: string;
+  error: string;
+  statusCode: number;
+}
