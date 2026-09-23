@@ -28,7 +28,7 @@ export const PLAN_LIMITS: Record<string, TenantLimits> = {
 };
 
 // Same shape as auth's error bodies (Nest's default HttpException), own literal
-// type rather than a shared one — see tenant-get-api.assertions.ts.
+// type rather than a shared one — see tenant-api.assertions.ts.
 export interface TenantErrorResponseBody {
   message: string;
   error: string;
