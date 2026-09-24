@@ -54,6 +54,14 @@ async function seed({ large = false } = {}) {
     // Part C / SUP-1067's own scratch user — needs OWNER to lower its own
     // tenant's rate limit via A1's override before the concurrency repro.
     'gw-owner@mutating.test',
+    // A2's own scratch users — POST /api/v1/keys is OWNER/ADMIN/MEMBER, so
+    // owner/admin/member cover the create spec's RBAC-positive tests;
+    // viewer/billing cover its RBAC-negative tests.
+    'keys-owner@mutating.test',
+    'keys-admin@mutating.test',
+    'keys-member@mutating.test',
+    'keys-viewer@mutating.test',
+    'keys-billing@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -101,6 +109,11 @@ async function seed({ large = false } = {}) {
     // tenant (never shared with A1's rate-limit-mutating-* tenants, which
     // exercise the override PATCH/DELETE endpoints, not gateway enforcement).
     { name: 'gw-mutating', slug: 'gw-mutating', plan: 'FREE', timezone: 'UTC' },
+    // A2's own scratch tenant — POST /api/v1/keys create + its scope matrix,
+    // tested against real gateway requests, so it needs its own tenant (never
+    // shared with gw-mutating, which exercises the rate-limit override
+    // instead).
+    { name: 'keys-mutating', slug: 'keys-mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -154,6 +167,11 @@ async function seed({ large = false } = {}) {
     ['audit-log-mutating', 'audit-log-viewer@mutating.test', 'VIEWER'],
     ['audit-log-mutating', 'audit-log-billing@mutating.test', 'BILLING'],
     ['gw-mutating', 'gw-owner@mutating.test', 'OWNER'],
+    ['keys-mutating', 'keys-owner@mutating.test', 'OWNER'],
+    ['keys-mutating', 'keys-admin@mutating.test', 'ADMIN'],
+    ['keys-mutating', 'keys-member@mutating.test', 'MEMBER'],
+    ['keys-mutating', 'keys-viewer@mutating.test', 'VIEWER'],
+    ['keys-mutating', 'keys-billing@mutating.test', 'BILLING'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
@@ -187,6 +205,15 @@ async function seed({ large = false } = {}) {
     // class level — see rate-limit-concurrency test's own reasoning).
     ['gw-mutating', 'Echo', { prefix: 'mk_gwmutatingecho', secret: 'gwmutatingechosecretgwmutatingechosecretgwmutatingecho' }],
     ['gw-mutating', 'Transform', { prefix: 'mk_gwmutatingtransform', secret: 'gwmutatingtransformsecretgwmutatingtransformsecret' }],
+    // A2 (docs/qa/conventions.md rule 24): scope-enforcement keys shared
+    // across ping/echo/transform's own <endpoint>-api.spec.ts /
+    // <endpoint>-api-error.spec.ts — a single request per key per test, well
+    // under the default rate limit, so unlike Ping Sequential/Burst above
+    // there's no bucket-exhaustion reason to give each endpoint its own set.
+    ['gw-mutating', 'Scope Unscoped', { prefix: 'mk_gwmutatingscopeunscoped', secret: 'gwmutatingscopeunscopedsecretgwmutatingscopeunscoped' }],
+    ['gw-mutating', 'Scope Write', { prefix: 'mk_gwmutatingscopewrite', secret: 'gwmutatingscopewritesecretgwmutatingscopewritesecret', scopes: ['write'] }],
+    ['gw-mutating', 'Scope Read', { prefix: 'mk_gwmutatingscoperead', secret: 'gwmutatingscopereadsecretgwmutatingscopereadsecretgw', scopes: ['read'] }],
+    ['gw-mutating', 'Scope Both', { prefix: 'mk_gwmutatingscopeboth', secret: 'gwmutatingscopebothsecretgwmutatingscopebothsecretgw', scopes: ['read', 'write'] }],
   ];
   if (large) {
     for (let i = 1; i <= 24; i++) keySpecs.push(['northwind', `Pipeline worker ${i}`]);
@@ -199,10 +226,11 @@ async function seed({ large = false } = {}) {
     // random-by-default case relies on the value being unpredictable.
     const prefix = fixed ? fixed.prefix : 'mk_' + randomBytes(4).toString('hex');
     const secret = fixed ? fixed.secret : randomBytes(24).toString('hex');
+    const scopes = fixed?.scopes ?? null;
     const { rows } = await pool.query(
-      `INSERT INTO api_keys (tenant_id, name, prefix, secret_hash)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [tenants[slug], name, prefix, hash(secret)],
+      `INSERT INTO api_keys (tenant_id, name, prefix, secret_hash, scopes)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [tenants[slug], name, prefix, hash(secret), scopes],
     );
     keys[`${slug}:${name}`] = { id: rows[0].id, full: `${prefix}.${secret}` };
   }

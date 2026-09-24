@@ -1,4 +1,5 @@
 import { APIResponse, expect } from '@playwright/test';
+import { assertResponseStatus, assertResponseBody } from '../utils/api.utils';
 
 export function assertRateLimitEnforcedSequentially(responses: APIResponse[], limit: number, successStatus: number) {
   const statuses = responses.map((r) => r.status());
@@ -11,4 +12,16 @@ export function assertRateLimitEnforcedSequentially(responses: APIResponse[], li
 export function assertRateLimitNotExceeded(responses: APIResponse[], limit: number) {
   const successCount = responses.filter((r) => r.status() === 200).length;
   expect.soft(successCount, `expected at most ${limit} concurrent requests to succeed, got ${successCount}`).toBeLessThanOrEqual(limit);
+}
+
+// A2: scope.guard.ts's own rejection when a key's scopes don't include the
+// current route's required scope (GET -> read, POST -> write).
+export async function assertScopeForbiddenError(response: APIResponse, missingScope: 'read' | 'write') {
+  assertResponseStatus(response, 403);
+  const body = await response.json();
+  assertResponseBody(body, {
+    message: `Key is missing required scope: ${missingScope}`,
+    error: 'Forbidden',
+    statusCode: 403,
+  }, { exact: true });
 }
