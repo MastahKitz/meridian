@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Post, Req, UseGuards, ForbiddenException } from '@nestjs/common';
 import { RateLimitGuard } from './rate-limit.guard';
+import { ScopeGuard } from './scope.guard';
 import { MeterService } from './meter.service';
 
+// ScopeGuard must run after RateLimitGuard — it reads req.apiKey, which
+// RateLimitGuard's canActivate() attaches once the key resolves.
 @Controller('gw')
-@UseGuards(RateLimitGuard)
+@UseGuards(RateLimitGuard, ScopeGuard)
 export class GatewayController {
   constructor(private readonly meter: MeterService) {}
 
