@@ -7,7 +7,7 @@ const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const PREFIX = /^mk_[0-9a-f]{8}$/;
 const SECRET = /^mk_[0-9a-f]{8}\.[0-9a-f]{48}$/;
 
-export async function assertKeyCreateSuccess(response: APIResponse, expectedName: string, expectedScopes: string[] | null): Promise<CreateKeyResponseBody> {
+export async function assertKeyCreateSuccess(response: APIResponse, expectedName: string, expectedScopes: string[] | null): Promise<void> {
   assertResponseStatus(response, 201);
   const body: CreateKeyResponseBody = await response.json();
   assertResponseBody(body, {
@@ -18,7 +18,6 @@ export async function assertKeyCreateSuccess(response: APIResponse, expectedName
     created_at: expect.stringMatching(ISO_TIMESTAMP),
     secret: expect.stringMatching(SECRET),
   }, { exact: true });
-  return body;
 }
 
 // Finds by id rather than asserting the whole array — keys-mutating

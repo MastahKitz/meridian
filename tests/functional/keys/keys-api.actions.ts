@@ -1,6 +1,6 @@
-import { APIRequestContext } from '@playwright/test';
+import { APIRequestContext, APIResponse } from '@playwright/test';
 import { sendApiRequest } from '../utils/api.utils';
-import { CreateKeyRequestBody } from './keys-api.data';
+import { CreateKeyRequestBody, CreateKeyResponseBody } from './keys-api.data';
 
 export async function sendKeysListRequest(request: APIRequestContext, accessToken: string | undefined, tenantId: string | undefined) {
   const headers: Record<string, string> = {};
@@ -30,6 +30,10 @@ export async function sendKeyCreateRequest(
     headers,
     body,
   });
+}
+
+export async function getGeneratedKey(response: APIResponse): Promise<CreateKeyResponseBody> {
+  return response.json();
 }
 
 export async function sendKeyDeleteRequest(

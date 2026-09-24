@@ -1,6 +1,6 @@
 import { APIRequestContext } from '@playwright/test';
 import { assertResponseStatus } from '../utils/api.utils';
-import { sendKeysListRequest, sendKeyCreateRequest, sendKeyDeleteRequest } from './keys-api.actions';
+import { sendKeysListRequest, sendKeyCreateRequest, getGeneratedKey, sendKeyDeleteRequest } from './keys-api.actions';
 import { assertKeyListedCorrectly } from './keys-api.assertions';
 import { CreateKeyRequestBody, CreateKeyResponseBody } from './keys-api.data';
 
@@ -12,7 +12,7 @@ export async function createKey(
 ): Promise<CreateKeyResponseBody> {
   const response = await sendKeyCreateRequest(request, accessToken, tenantId, body);
   assertResponseStatus(response, 201);
-  return response.json();
+  return getGeneratedKey(response);
 }
 
 export async function assertKeyPersistedCorrectly(
