@@ -39,6 +39,13 @@ export const auditLogMutatingBillingLoginBody: LoginRequestBody = { email: 'audi
 // gw - mutating test data (Part C / SUP-1067)
 export const gwMutatingOwnerLoginBody: LoginRequestBody = { email: 'gw-owner@mutating.test', password };
 
+// keys - mutating test data (A2)
+export const keysMutatingOwnerLoginBody: LoginRequestBody = { email: 'keys-owner@mutating.test', password };
+export const keysMutatingAdminLoginBody: LoginRequestBody = { email: 'keys-admin@mutating.test', password };
+export const keysMutatingMemberLoginBody: LoginRequestBody = { email: 'keys-member@mutating.test', password };
+export const keysMutatingViewerLoginBody: LoginRequestBody = { email: 'keys-viewer@mutating.test', password };
+export const keysMutatingBillingLoginBody: LoginRequestBody = { email: 'keys-billing@mutating.test', password };
+
 export interface LoginResponseBody {
   accessToken: string;
   refreshToken: string;

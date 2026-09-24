@@ -262,3 +262,24 @@ elsewhere in the repo.
     unused *within* `auth/`'s own success specs but are exactly what every other domain's
     `beforeAll` needs to get an authenticated actor or a token to manipulate — not dead code
     just because nothing in the same folder calls them yet.
+
+24. **A test belongs to the domain whose own guard/validation logic the assertion actually
+    exercises — not the domain that merely triggered the precondition.** When domain A's write
+    has a downstream effect that's enforced by domain B's own logic, the "did the effect actually
+    take hold" assertion belongs in B's spec, using A's flow function purely as setup — it does
+    not get inlined into A's own spec. Domain A's spec proves only its own write and read-back
+    (create/set the resource, then read it back to confirm it persisted correctly); it does not
+    also prove that some other system respects the change. Examples: `tenant/rate-limit`'s set
+    spec proves the override round-trips through `GET /tenant`
+    (`tenant-api.flow.ts`'s `assertTenantDetailsCorrect`) but never calls the gateway itself —
+    whether `RateLimitGuard` actually enforces the new limit is `gw/`'s own concern, tested in
+    `gw/ping/ping-rate-limit-api.spec.ts` (and echo's/transform's) using `setRateLimitOverride` as
+    setup. Likewise `auth/logout` proves only that its own endpoint succeeds — whether a
+    terminated refresh token is actually rejected is `auth/refresh`'s own concern, tested in
+    `refresh-api-error.spec.ts`'s "revoked refresh token" case using `terminateRefreshToken` as
+    setup. A2's key scopes follow the same split: `keys/keys-create-api.spec.ts` proves only that
+    `POST /api/v1/keys` persists the requested `scopes` correctly (create response +
+    `GET /api/v1/keys` read-back via `assertKeyPersistedCorrectly`); whether `ScopeGuard` actually
+    enforces those scopes on a real gateway call is `gw/`'s concern, tested against seeded fixed
+    keys in each endpoint's own `<endpoint>-api.spec.ts` (allowed scopes) and
+    `<endpoint>-api-error.spec.ts` (the one forbidden scope for that endpoint's HTTP method).

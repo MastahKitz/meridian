@@ -15,3 +15,10 @@ export const GW_MUTATING_PING_SEQUENTIAL_API_KEY = 'mk_gwmutatingpingsequential.
 export const GW_MUTATING_PING_BURST_API_KEY = 'mk_gwmutatingpingburst.gwmutatingpingburstsecretgwmutatingpingburstsecret';
 export const GW_MUTATING_ECHO_API_KEY = 'mk_gwmutatingecho.gwmutatingechosecretgwmutatingechosecretgwmutatingecho';
 export const GW_MUTATING_TRANSFORM_API_KEY = 'mk_gwmutatingtransform.gwmutatingtransformsecretgwmutatingtransformsecret';
+
+// A2 scope-enforcement keys (docs/qa/conventions.md rule 24) — shared across
+// ping/echo/transform's own <endpoint>-api.spec.ts / <endpoint>-api-error.spec.ts.
+export const GW_MUTATING_SCOPE_UNSCOPED_API_KEY = 'mk_gwmutatingscopeunscoped.gwmutatingscopeunscopedsecretgwmutatingscopeunscoped';
+export const GW_MUTATING_SCOPE_WRITE_API_KEY = 'mk_gwmutatingscopewrite.gwmutatingscopewritesecretgwmutatingscopewritesecret';
+export const GW_MUTATING_SCOPE_READ_API_KEY = 'mk_gwmutatingscoperead.gwmutatingscopereadsecretgwmutatingscopereadsecretgw';
+export const GW_MUTATING_SCOPE_BOTH_API_KEY = 'mk_gwmutatingscopeboth.gwmutatingscopebothsecretgwmutatingscopebothsecretgw';
