@@ -10,8 +10,12 @@
 // Ported from the sibling playwright-fullstack-test-framework repo's
 // scripts/build-report-dashboard.js, trimmed: no AI-triage history (that repo's
 // version also carries forward triage-history.json from a separate qa-triage
-// workflow Meridian doesn't have), no per-browser labeling (Meridian has no
-// UI/browser-driven tests yet, only the API-layer mutating/non-mutating split).
+// workflow Meridian doesn't have), no per-browser breakdown in the dashboard's
+// own summary table — @ui specs do now run across chromium/firefox/webkit
+// (playwright.config.ts), but this script only reads aggregate report.stats
+// and copies Playwright's own HTML report wholesale, which already groups by
+// project natively, so a per-browser breakdown here would just duplicate
+// what that linked report already shows.
 
 const fs = require('fs');
 const path = require('path');

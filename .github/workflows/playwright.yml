@@ -44,11 +44,13 @@ jobs:
       - name: Start Docker Compose services
         run: docker compose up -d --build postgres redis mock-billing api web
 
-      # Only needed once a spec actually drives a browser (tests/functional/
-      # overview/*) — every other spec uses Playwright's `request` fixture,
-      # which needs no browser binary at all.
+      # Only needed for @ui specs (tests/functional/overview/*,
+      # tests/functional/memberships/memberships.spec.ts) — every @api spec
+      # uses Playwright's `request` fixture, which needs no browser binary at
+      # all. playwright.config.ts's chromium/firefox/webkit projects only run
+      # @ui specs (see that file's own comment), so all three are needed here.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       # depends_on/healthy only covers postgres and redis being ready before the
       # api/web containers *start* — neither has its own healthcheck block, so
