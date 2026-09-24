@@ -10,8 +10,10 @@
 // Ported from the sibling playwright-fullstack-test-framework repo's
 // scripts/build-report-dashboard.js, trimmed: no AI-triage history (that repo's
 // version also carries forward triage-history.json from a separate qa-triage
-// workflow Meridian doesn't have), no per-browser labeling (Meridian has no
-// UI/browser-driven tests yet, only the API-layer mutating/non-mutating split).
+// workflow Meridian doesn't have). Extended with a unit-tests summary
+// (qa-developer-take-home-brief.md's Part B) — read from a second job's
+// artifact (apps/api/coverage/), since .github/workflows/playwright.yml runs
+// unit-tests and playwright as separate jobs, not one.
 
 const fs = require('fs');
 const path = require('path');
@@ -42,6 +44,7 @@ const [
   reportDir = 'test-report',
   prevSiteDir = 'gh-pages',
   outDir = 'public',
+  unitCoverageDir = 'unit-coverage',
 ] = process.argv.slice(2);
 
 const {
@@ -98,14 +101,54 @@ function readStats() {
   }
 }
 
+// unit-tests job's artifact: jest's own --json output (numTotalTests/
+// numPassedTests/numFailedTests/success) plus its json-summary coverage
+// reporter's total block (each metric's .pct). Missing entirely — e.g. the
+// unit-tests job didn't run at all, or its artifact upload failed — is
+// recorded as hasResults: false rather than thrown, same posture as
+// readStats() above.
+function readUnitTestStats() {
+  const resultsFile = path.join(unitCoverageDir, 'test-results.json');
+  try {
+    const results = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
+    const coverageSummary = readJsonSafe(path.join(unitCoverageDir, 'coverage-summary.json'), null);
+    const coverage = coverageSummary
+      ? {
+          statements: coverageSummary.total.statements.pct,
+          branches: coverageSummary.total.branches.pct,
+          functions: coverageSummary.total.functions.pct,
+          lines: coverageSummary.total.lines.pct,
+        }
+      : null;
+    return {
+      total: results.numTotalTests || 0,
+      passed: results.numPassedTests || 0,
+      failed: results.numFailedTests || 0,
+      success: !!results.success,
+      coverage,
+      hasResults: true,
+    };
+  } catch (err) {
+    console.warn(`Could not read ${resultsFile}: ${err.message} — recording the run with no unit test results.`);
+    return { total: 0, passed: 0, failed: 0, success: false, coverage: null, hasResults: false };
+  }
+}
+
 const stats = readStats();
-const status = !stats.hasResults
-  ? 'unknown'
-  : stats.failed > 0
+const unitTests = readUnitTestStats();
+
+// A unit-test failure (or threshold miss — jest.config.js's coverageThreshold
+// makes that fail the same way) always marks the run failed, even though
+// that also means playwright never ran (needs: unit-tests skips it) and so
+// has no results of its own to disagree with.
+const status =
+  (unitTests.hasResults && !unitTests.success) || (stats.hasResults && stats.failed > 0)
     ? 'failed'
-    : stats.flaky > 0
+    : stats.hasResults && stats.flaky > 0
       ? 'flaky'
-      : 'passed';
+      : stats.hasResults || unitTests.hasResults
+        ? 'passed'
+        : 'unknown';
 
 const entry = {
   runNumber,
@@ -118,6 +161,7 @@ const entry = {
   reportHref: `runs/${runNumber}/`,
   reportAvailable: fs.existsSync(reportDir),
   ...stats,
+  unitTests,
 };
 
 // Merge with the previously published run list.
@@ -165,16 +209,28 @@ function writeJobSummary(run) {
   const base = owner && repo ? `https://${owner.toLowerCase()}.github.io/${repo}/` : '';
   const dur = run.durationMs ? `${Math.round(run.durationMs / 1000)}s` : '—';
   const lines = [
-    `## ${emoji} Playwright run #${run.runNumber} — ${run.status}`,
+    `## ${emoji} Run #${run.runNumber} — ${run.status}`,
     '',
+    '### End-to-end (Playwright)',
     '| Total | Passed | Failed | Flaky | Skipped | Duration |',
     '|------:|-------:|-------:|------:|--------:|---------:|',
     `| ${run.total} | ${run.passed} | ${run.failed || 0} | ${run.flaky || 0} | ${run.skipped || 0} | ${dur} |`,
     '',
+    '### Unit tests',
   ];
+  if (run.unitTests.hasResults) {
+    lines.push(
+      '| Total | Passed | Failed | Statements | Branches | Functions | Lines |',
+      '|------:|-------:|-------:|-----------:|---------:|----------:|------:|',
+      `| ${run.unitTests.total} | ${run.unitTests.passed} | ${run.unitTests.failed} | ${run.unitTests.coverage ? run.unitTests.coverage.statements + '%' : '—'} | ${run.unitTests.coverage ? run.unitTests.coverage.branches + '%' : '—'} | ${run.unitTests.coverage ? run.unitTests.coverage.functions + '%' : '—'} | ${run.unitTests.coverage ? run.unitTests.coverage.lines + '%' : '—'} |`,
+      '',
+    );
+  } else {
+    lines.push('_No unit test results for this run._', '');
+  }
   if (base) {
     lines.push(`- 📊 [Test dashboard (last ${MAX_RUNS} runs)](${base})`);
-    lines.push(`- 📄 [Full report for this run](${base}runs/${run.runNumber}/)`);
+    if (run.reportAvailable) lines.push(`- 📄 [Full Playwright report for this run](${base}runs/${run.runNumber}/)`);
   }
   lines.push('');
   fs.appendFileSync(file, lines.join('\n'));

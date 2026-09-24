@@ -6,6 +6,7 @@ dist/
 test-results/
 test-report/
 playwright-report/
+coverage/
 public/
 gh-pages/
 .seed-output.json
