@@ -17,7 +17,7 @@
 // project natively, so a per-browser breakdown here would just duplicate
 // what that linked report already shows. Extended with a unit-tests summary
 // (qa-developer-take-home-brief.md's Part B) — read from a second job's
-// artifact (apps/api/coverage/), since .github/workflows/playwright.yml runs
+// artifact (apps/api/coverage/), since .github/workflows/ci.yml runs
 // unit-tests and playwright as separate jobs, not one.
 
 const fs = require('fs');
