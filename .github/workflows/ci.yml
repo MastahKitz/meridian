@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: CI
 
 on:
   push:
@@ -18,7 +18,46 @@ permissions:
   contents: write   # the dashboard step force-pushes the report site to gh-pages
 
 jobs:
-  test:
+  # Fast and needs no Docker/DB — runs first so a broken permission/limit/
+  # usage/billing calculation fails the build in seconds, not after a 30
+  # minute Docker + Playwright run (qa-developer-take-home-brief.md's Part B).
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Every spec under apps/api/src/**/*.spec.ts mocks DbService rather
+      # than hitting a real database. Coverage thresholds are enforced by
+      # apps/api/jest.config.js itself — a threshold miss fails this step
+      # (non-zero exit) same as a failing test would, which is what stops
+      # the playwright job below from ever starting.
+      - name: Run unit tests with coverage
+        run: npm run test:coverage --workspace=apps/api
+
+      # Always, not just on success — the dashboard job needs this even when
+      # a test or threshold failed, so a red run still shows up instead of
+      # silently vanishing.
+      - name: Upload coverage and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: apps/api/coverage/
+          retention-days: 14
+
+  # Only starts once unit-tests succeeds (the default `needs` behaviour skips
+  # this job otherwise) — the E2E suite's own 30 minutes of Docker/browser
+  # time isn't worth spending on a commit the fast unit tests already failed.
+  playwright:
+    needs: unit-tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -121,18 +160,51 @@ jobs:
         if: always()
         run: docker compose down -v
 
-      # ---------------------------------------------------------------------
-      # Publish this run to the GitHub Pages dashboard: last 10 runs with their
-      # counts and a link to each run's full HTML report, served inline so there
-      # is nothing to download. Runs even when tests failed, so the dashboard
-      # always reflects the latest state.
-      # ---------------------------------------------------------------------
+  # ---------------------------------------------------------------------
+  # Publish this run to the GitHub Pages dashboard: last 10 runs with their
+  # counts and a link to each run's full HTML report, served inline so there
+  # is nothing to download. `needs` both jobs but `if: always()` so this
+  # still runs — and the dashboard still gets a row — whether unit-tests
+  # failed (playwright then never ran at all) or playwright itself failed.
+  # ---------------------------------------------------------------------
+  publish-dashboard:
+    needs: [unit-tests, playwright]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Always uploaded by unit-tests (that job's own upload step is also
+      # `if: always()`), so this should always be there — continue-on-error
+      # is just defensive, matching the same posture as the dashboard
+      # checkout below.
+      - name: Download unit test coverage
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: unit-coverage
+
+      # Only exists if playwright actually ran (needs: unit-tests skips it
+      # entirely on a failed unit-tests job) — build-report-dashboard.js
+      # already handles a missing/unreadable results.json by recording the
+      # run with hasResults: false rather than throwing.
+      - name: Download Playwright report
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: test-report
 
       # Grab the currently-published site so the builder can carry the four most
       # recent prior reports forward. First ever run: the branch doesn't exist,
       # so this is allowed to fail and the builder starts from an empty list.
       - name: Check out existing dashboard
-        if: always()
         continue-on-error: true
         uses: actions/checkout@v4
         with:
@@ -140,13 +212,11 @@ jobs:
           path: gh-pages
 
       - name: Build dashboard site
-        if: always()
-        run: node scripts/build-report-dashboard.js test-report/results.json test-report gh-pages public
+        run: node scripts/build-report-dashboard.js test-report/results.json test-report gh-pages public unit-coverage
 
       # Force-push the assembled ./public wholesale — the branch only ever holds
       # the last 10 runs, so purging is automatic.
       - name: Publish dashboard to gh-pages
-        if: always()
         working-directory: public
         run: |
           git init -q -b gh-pages

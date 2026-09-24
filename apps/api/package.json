@@ -5,7 +5,9 @@
   "scripts": {
     "build": "nest build",
     "start": "node dist/main.js",
-    "start:dev": "nest start --watch"
+    "start:dev": "nest start --watch",
+    "test": "jest",
+    "test:coverage": "jest --coverage --json --outputFile=coverage/test-results.json"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
@@ -22,9 +24,12 @@
     "@nestjs/cli": "^10.4.9",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.13",
     "typescript": "^5.7.2"
   }
 }
