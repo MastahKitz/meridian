@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import { withHookRequestContext, assertResponseStatus, waitSeconds } from '../../utils/api.utils';
 import { generateAccessToken } from '../../auth/login/login-api.flow';
-import { keysMutatingOwnerLoginBody } from '../../auth/login/login-api.data';
+import { gwMutatingOwnerLoginBody } from '../../auth/login/login-api.data';
 import { getTenantId } from '../../utils/seed.utils';
 import { createKey, revokeKey } from '../../keys/keys-api.flow';
 import { rotateKey } from '../../keys/rotate/rotate-api.flow';
@@ -14,7 +14,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
 
   test.beforeAll(async ({ playwright }) => {
     await withHookRequestContext(playwright, async (request) => {
-      ownerToken = await generateAccessToken(request, keysMutatingOwnerLoginBody);
+      ownerToken = await generateAccessToken(request, gwMutatingOwnerLoginBody);
     });
   });
 
@@ -24,7 +24,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
   });
 
   test('validate a revoked key is rejected on ping', async ({ request }) => {
-    const tenantId = getTenantId('keys-mutating');
+    const tenantId = getTenantId('gw-mutating');
     const key = await createKey(request, ownerToken, tenantId, { name: 'SUP-1051 repro (ping)' });
 
     const beforeRevoke = await sendPingRequest(request, key.secret);
@@ -37,7 +37,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
   });
 
   test('validate the previous secret stops working once its rotation grace period ends', async ({ request }) => {
-    const tenantId = getTenantId('keys-mutating');
+    const tenantId = getTenantId('gw-mutating');
     const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate grace period (ping)' });
     const oldSecret = key.secret;
 
@@ -63,7 +63,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
 
 
   test('validate the previous secret stops working immediately when the grace period is 0', async ({ request }) => {
-    const tenantId = getTenantId('keys-mutating');
+    const tenantId = getTenantId('gw-mutating');
     const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate zero grace period (ping)' });
     const oldSecret = key.secret;
 
@@ -80,7 +80,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
   });
 
   test('validate rotating a second time immediately invalidates the first rotation\'s previous secret', async ({ request }) => {
-    const tenantId = getTenantId('keys-mutating');
+    const tenantId = getTenantId('gw-mutating');
     const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate twice (ping)' });
     const secretA = key.secret;
 
@@ -104,7 +104,7 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
   });
 
   test('validate the previous secret still works shortly after rotating with no grace period specified', async ({ request }) => {
-    const tenantId = getTenantId('keys-mutating');
+    const tenantId = getTenantId('gw-mutating');
     const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate default grace period (ping)' });
     const oldSecret = key.secret;
 
