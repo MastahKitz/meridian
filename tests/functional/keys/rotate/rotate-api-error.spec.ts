@@ -76,11 +76,19 @@ test.describe('keys api - rotate errors', { tag: ['@keys', '@rotate', '@api', '@
     await assertRequiresOwnerAdminError(response);
   });
 
-  test('validate a key cannot be rotated with an invalid grace period', async ({ request }) => {
+  test('validate a key cannot be rotated with a negative grace period', async ({ request }) => {
     const tenantId = getTenantId('keys-mutating');
-    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate invalid grace period' });
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate negative grace period' });
 
     const response = await sendKeyRotateRequest(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: -1 });
+    await assertInvalidGracePeriodError(response);
+  });
+
+  test('validate a key cannot be rotated with a grace period above the maximum', async ({ request }) => {
+    const tenantId = getTenantId('keys-mutating');
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate above max grace period' });
+
+    const response = await sendKeyRotateRequest(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: 86401 });
     await assertInvalidGracePeriodError(response);
   });
 

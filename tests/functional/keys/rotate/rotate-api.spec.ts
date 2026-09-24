@@ -53,4 +53,14 @@ test.describe('keys api - rotate', { tag: ['@keys', '@rotate', '@api', '@mutatin
     await assertKeyPersistedCorrectly(request, ownerToken, tenantId, key);
   });
 
+  test('validate a key can be rotated with a grace period exactly at the maximum', async ({ request }) => {
+    const tenantId = getTenantId('keys-mutating');
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate max grace period' });
+
+    const response = await sendKeyRotateRequest(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: 86400 });
+    await assertKeyRotateSuccess(response, key, key.secret);
+
+    await assertKeyPersistedCorrectly(request, ownerToken, tenantId, key);
+  });
+
 });
