@@ -61,4 +61,46 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
     assertResponseStatus(newSecretAfterGrace, 200);
   });
 
+
+  test('validate the previous secret stops working immediately when the grace period is 0', async ({ request }) => {
+    const tenantId = getTenantId('keys-mutating');
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate zero grace period (ping)' });
+    const oldSecret = key.secret;
+
+    const oldSecretBeforeRotate = await sendPingRequest(request, oldSecret);
+    assertResponseStatus(oldSecretBeforeRotate, 200);
+
+    const rotated = await rotateKey(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: 0 });
+
+    const oldSecretAfterRotate = await sendPingRequest(request, oldSecret);
+    await assertInvalidApiKeyError(oldSecretAfterRotate);
+
+    const newSecretAfterRotate = await sendPingRequest(request, rotated.secret);
+    assertResponseStatus(newSecretAfterRotate, 200);
+  });
+
+  test('validate rotating a second time immediately invalidates the first rotation\'s previous secret', async ({ request }) => {
+    const tenantId = getTenantId('keys-mutating');
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate twice (ping)' });
+    const secretA = key.secret;
+
+    const rotatedToB = await rotateKey(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: 3600 });
+    const secretB = rotatedToB.secret;
+
+    const secretAStillInGrace = await sendPingRequest(request, secretA);
+    assertResponseStatus(secretAStillInGrace, 200);
+
+    const rotatedToC = await rotateKey(request, ownerToken, tenantId, key.id, { gracePeriodSeconds: 3600 });
+    const secretC = rotatedToC.secret;
+
+    const secretAAfterSecondRotate = await sendPingRequest(request, secretA);
+    await assertInvalidApiKeyError(secretAAfterSecondRotate);
+
+    const secretBNowInGrace = await sendPingRequest(request, secretB);
+    assertResponseStatus(secretBNowInGrace, 200);
+
+    const secretCWorks = await sendPingRequest(request, secretC);
+    assertResponseStatus(secretCWorks, 200);
+  });
+
 });
