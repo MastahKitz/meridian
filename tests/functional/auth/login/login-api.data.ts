@@ -29,6 +29,13 @@ export const rateLimitMutatingMemberLoginBody: LoginRequestBody = { email: 'rate
 export const rateLimitMutatingViewerLoginBody: LoginRequestBody = { email: 'rate-limit-viewer@mutating.test', password };
 export const rateLimitMutatingBillingLoginBody: LoginRequestBody = { email: 'rate-limit-billing@mutating.test', password };
 
+// audit-log - mutating test data
+export const auditLogMutatingOwnerLoginBody: LoginRequestBody = { email: 'audit-log-owner@mutating.test', password };
+export const auditLogMutatingAdminLoginBody: LoginRequestBody = { email: 'audit-log-admin@mutating.test', password };
+export const auditLogMutatingMemberLoginBody: LoginRequestBody = { email: 'audit-log-member@mutating.test', password };
+export const auditLogMutatingViewerLoginBody: LoginRequestBody = { email: 'audit-log-viewer@mutating.test', password };
+export const auditLogMutatingBillingLoginBody: LoginRequestBody = { email: 'audit-log-billing@mutating.test', password };
+
 export interface LoginResponseBody {
   accessToken: string;
   refreshToken: string;
