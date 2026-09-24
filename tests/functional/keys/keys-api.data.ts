@@ -3,6 +3,11 @@ export interface CreateKeyRequestBody {
   scopes?: string[];
 }
 
+// keys.controller.ts's create()'s literal action name for its audit.record()
+// call — the one domain-specific piece a caller supplies when checking the
+// generic audit-log assertion (tenant/audit-log/audit-log-api.assertions.ts).
+export const KEY_CREATED_ACTION = 'key.created';
+
 // keys.controller.ts's create() returns the new row (RETURNING id, name,
 // prefix, scopes, created_at) plus the one-time secret — never stored, only
 // returned on creation.
