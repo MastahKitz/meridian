@@ -7,7 +7,7 @@ import {
   keysMutatingAdminLoginBody,
   keysMutatingMemberLoginBody,
 } from '../auth/login/login-api.data';
-import { sendKeyCreateRequest } from './keys-api.actions';
+import { sendKeyCreateRequest, getGeneratedKey } from './keys-api.actions';
 import { assertKeyCreateSuccess } from './keys-api.assertions';
 import { assertKeyPersistedCorrectly } from './keys-api.flow';
 
@@ -32,37 +32,43 @@ test.describe('keys api - create', { tag: ['@keys', '@api', '@mutating'] }, () =
 
   test('validate a key can be created without scopes', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, ownerToken, getTenantId('keys-mutating'), { name: 'Unscoped' });
-    const key = await assertKeyCreateSuccess(response, 'Unscoped', null);
+    await assertKeyCreateSuccess(response, 'Unscoped', null);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, ownerToken, getTenantId('keys-mutating'), key);
   });
 
   test('validate a key can be created with only the write scope', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, ownerToken, getTenantId('keys-mutating'), { name: 'Write only', scopes: ['write'] });
-    const key = await assertKeyCreateSuccess(response, 'Write only', ['write']);
+    await assertKeyCreateSuccess(response, 'Write only', ['write']);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, ownerToken, getTenantId('keys-mutating'), key);
   });
 
   test('validate a key can be created with only the read scope', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, ownerToken, getTenantId('keys-mutating'), { name: 'Read only', scopes: ['read'] });
-    const key = await assertKeyCreateSuccess(response, 'Read only', ['read']);
+    await assertKeyCreateSuccess(response, 'Read only', ['read']);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, ownerToken, getTenantId('keys-mutating'), key);
   });
 
   test('validate a key can be created with both read and write scopes', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, ownerToken, getTenantId('keys-mutating'), { name: 'Read and write', scopes: ['read', 'write'] });
-    const key = await assertKeyCreateSuccess(response, 'Read and write', ['read', 'write']);
+    await assertKeyCreateSuccess(response, 'Read and write', ['read', 'write']);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, ownerToken, getTenantId('keys-mutating'), key);
   });
 
   test('validate admin user can create a key', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, adminToken, getTenantId('keys-mutating'), { name: 'Admin created' });
-    const key = await assertKeyCreateSuccess(response, 'Admin created', null);
+    await assertKeyCreateSuccess(response, 'Admin created', null);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, adminToken, getTenantId('keys-mutating'), key);
   });
 
   test('validate member user can create a key', async ({ request }) => {
     const response = await sendKeyCreateRequest(request, memberToken, getTenantId('keys-mutating'), { name: 'Member created' });
-    const key = await assertKeyCreateSuccess(response, 'Member created', null);
+    await assertKeyCreateSuccess(response, 'Member created', null);
+    const key = await getGeneratedKey(response);
     await assertKeyPersistedCorrectly(request, memberToken, getTenantId('keys-mutating'), key);
   });
 
