@@ -14,7 +14,7 @@ import { assertRateLimitEnforcedSequentially, assertRateLimitNotExceeded } from 
 const LIMIT = 5;
 const BURST_SIZE = 20;
 
-test.describe('gw ping rate limit concurrency (SUP-1067)', { tag: ['@gw', '@ping', '@api', '@mutating', '@defect'] }, () => {
+test.describe('gw ping rate limit concurrency (SUP-1067)', { tag: ['@gw', '@ping', '@api', '@mutating'] }, () => {
   let ownerToken: string;
 
   test.beforeAll(async ({ playwright }) => {
