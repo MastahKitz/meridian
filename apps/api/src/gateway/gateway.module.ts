@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { GatewayController } from './gateway.controller';
 import { RateLimitGuard } from './rate-limit.guard';
+import { ScopeGuard } from './scope.guard';
 import { ApiKeyService } from './api-key.service';
 import { MeterService } from './meter.service';
 
 @Module({
   controllers: [GatewayController],
-  providers: [RateLimitGuard, ApiKeyService, MeterService],
+  providers: [RateLimitGuard, ScopeGuard, ApiKeyService, MeterService],
   exports: [ApiKeyService, MeterService],
 })
 export class GatewayModule {}

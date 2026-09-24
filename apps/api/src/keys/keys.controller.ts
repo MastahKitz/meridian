@@ -10,6 +10,21 @@ export function hashSecret(secret: string): string {
   return createHash('sha256').update(secret).digest('hex');
 }
 
+const VALID_SCOPES = ['read', 'write'];
+
+function parseScopes(scopes: unknown): string[] | null {
+  if (scopes === undefined) return null;
+  if (
+    !Array.isArray(scopes) ||
+    scopes.length === 0 ||
+    !scopes.every((s) => VALID_SCOPES.includes(s)) ||
+    new Set(scopes).size !== scopes.length
+  ) {
+    throw new BadRequestException(`scopes must be a non-empty array of unique values from: ${VALID_SCOPES.join(', ')}`);
+  }
+  return scopes;
+}
+
 @Controller('keys')
 @UseGuards(JwtGuard, RolesGuard)
 export class KeysController {
@@ -18,7 +33,7 @@ export class KeysController {
   @Get()
   list(@Actor() actor: RequestActor) {
     return this.db.query(
-      `SELECT id, name, prefix, revoked_at, last_used_at, created_at
+      `SELECT id, name, prefix, revoked_at, last_used_at, scopes, created_at
          FROM api_keys
         WHERE tenant_id = $1
         ORDER BY created_at DESC`,
@@ -28,17 +43,18 @@ export class KeysController {
 
   @Post()
   @Roles('OWNER', 'ADMIN', 'MEMBER')
-  async create(@Actor() actor: RequestActor, @Body() body: { name?: string }) {
+  async create(@Actor() actor: RequestActor, @Body() body: { name?: string; scopes?: string[] }) {
     if (!body?.name) throw new BadRequestException('name required');
+    const scopes = parseScopes(body.scopes);
 
     const prefix = 'mk_' + randomBytes(4).toString('hex');
     const secret = randomBytes(24).toString('hex');
 
     const key = await this.db.one(
-      `INSERT INTO api_keys (tenant_id, name, prefix, secret_hash)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, prefix, created_at`,
-      [actor.tenantId, body.name, prefix, hashSecret(secret)],
+      `INSERT INTO api_keys (tenant_id, name, prefix, secret_hash, scopes)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, prefix, scopes, created_at`,
+      [actor.tenantId, body.name, prefix, hashSecret(secret), scopes],
     );
 
     await this.audit.record({
@@ -46,7 +62,7 @@ export class KeysController {
       actorId: actor.userId,
       action: 'key.created',
       target: key.id,
-      metadata: { name: body.name },
+      metadata: { name: body.name, scopes },
     });
 
     return { ...key, secret: `${prefix}.${secret}` };

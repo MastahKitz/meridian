@@ -10,6 +10,7 @@ export interface ResolvedKey {
   timezone: string;
   suspended: boolean;
   rateLimitOverride: number | null;
+  scopes: string[] | null;
 }
 
 const CACHE_TTL_MS = 60_000;
@@ -31,7 +32,7 @@ export class ApiKeyService {
 
     const hash = createHash('sha256').update(secret).digest('hex');
     const row = await this.db.one(
-      `SELECT k.id, k.tenant_id, k.prefix, t.plan, t.timezone, t.suspended, t.rate_limit_override
+      `SELECT k.id, k.tenant_id, k.prefix, k.scopes, t.plan, t.timezone, t.suspended, t.rate_limit_override
          FROM api_keys k
          JOIN tenants t ON t.id = k.tenant_id
         WHERE k.prefix = $1 AND k.secret_hash = $2 AND k.revoked_at IS NULL`,
@@ -47,6 +48,7 @@ export class ApiKeyService {
           timezone: row.timezone,
           suspended: row.suspended,
           rateLimitOverride: row.rate_limit_override,
+          scopes: row.scopes,
         }
       : null;
 
