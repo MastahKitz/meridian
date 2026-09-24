@@ -51,6 +51,9 @@ async function seed({ large = false } = {}) {
     'audit-log-member@mutating.test',
     'audit-log-viewer@mutating.test',
     'audit-log-billing@mutating.test',
+    // Part C / SUP-1067's own scratch user — needs OWNER to lower its own
+    // tenant's rate limit via A1's override before the concurrency repro.
+    'gw-owner@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -93,6 +96,11 @@ async function seed({ large = false } = {}) {
     // with zero entries" assertion can never see their writes. Audit-log
     // recording isn't plan-dependent, so one tenant (FREE) is enough.
     { name: 'audit-log-mutating', slug: 'audit-log-mutating', plan: 'FREE', timezone: 'UTC' },
+    // Part C / SUP-1067's own scratch tenant — reproduces the rate-limit
+    // concurrency race via a real gateway request, so it needs its own
+    // tenant (never shared with A1's rate-limit-mutating-* tenants, which
+    // exercise the override PATCH/DELETE endpoints, not gateway enforcement).
+    { name: 'gw-mutating', slug: 'gw-mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -145,6 +153,7 @@ async function seed({ large = false } = {}) {
     ['audit-log-mutating', 'audit-log-member@mutating.test', 'MEMBER'],
     ['audit-log-mutating', 'audit-log-viewer@mutating.test', 'VIEWER'],
     ['audit-log-mutating', 'audit-log-billing@mutating.test', 'BILLING'],
+    ['gw-mutating', 'gw-owner@mutating.test', 'OWNER'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
@@ -161,13 +170,35 @@ async function seed({ large = false } = {}) {
     ['northwind', 'Production'],
     ['northwind', 'Analytics pipeline'],
     ['sakura', 'Production'],
+    // Part C / SUP-1067: fixed, known keys so the test can reference them as
+    // literal constants (gw-api.data.ts) rather than needing new
+    // read-back-what-was-generated infra — safe since the DB only ever
+    // stores the hash either way. Two separate keys, not one: rate-limit.guard.ts's
+    // Redis bucket is keyed per api-key prefix, so the sequential-baseline
+    // test and the concurrent-burst test need independent buckets — sharing
+    // one key would let the baseline test's counts pollute the burst test's
+    // window (or vice versa) regardless of timing.
+    ['gw-mutating', 'Ping Sequential', { prefix: 'mk_gwmutatingpingsequential', secret: 'gwmutatingpingsequentialsecretgwmutatingpingsequential' }],
+    ['gw-mutating', 'Ping Burst', { prefix: 'mk_gwmutatingpingburst', secret: 'gwmutatingpingburstsecretgwmutatingpingburstsecret' }],
+    // Smoke keys for echo/transform (gw/echo, gw/transform) — confirm
+    // RateLimitGuard is actually wired up on those endpoints too, without
+    // re-running the full concurrency investigation ping's spec already
+    // covers (the guard is endpoint-agnostic, applied once at the controller
+    // class level — see rate-limit-concurrency test's own reasoning).
+    ['gw-mutating', 'Echo', { prefix: 'mk_gwmutatingecho', secret: 'gwmutatingechosecretgwmutatingechosecretgwmutatingecho' }],
+    ['gw-mutating', 'Transform', { prefix: 'mk_gwmutatingtransform', secret: 'gwmutatingtransformsecretgwmutatingtransformsecret' }],
   ];
   if (large) {
     for (let i = 1; i <= 24; i++) keySpecs.push(['northwind', `Pipeline worker ${i}`]);
   }
-  for (const [slug, name] of keySpecs) {
-    const prefix = 'mk_' + randomBytes(4).toString('hex');
-    const secret = randomBytes(24).toString('hex');
+  for (const [slug, name, fixed] of keySpecs) {
+    // `fixed` lets a spec pin a known prefix/secret instead of a random one —
+    // for a scratch key a test needs to reference as a literal constant
+    // (rather than reading back what got generated). Safe to do since the DB
+    // only ever stores the secret's hash either way; nothing about the
+    // random-by-default case relies on the value being unpredictable.
+    const prefix = fixed ? fixed.prefix : 'mk_' + randomBytes(4).toString('hex');
+    const secret = fixed ? fixed.secret : randomBytes(24).toString('hex');
     const { rows } = await pool.query(
       `INSERT INTO api_keys (tenant_id, name, prefix, secret_hash)
        VALUES ($1, $2, $3, $4) RETURNING id`,
