@@ -103,4 +103,19 @@ test.describe('gw ping api - errors', { tag: ['@gw', '@ping', '@api', '@error', 
     assertResponseStatus(secretCWorks, 200);
   });
 
+  test('validate the previous secret still works shortly after rotating with no grace period specified', async ({ request }) => {
+    const tenantId = getTenantId('keys-mutating');
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Rotate default grace period (ping)' });
+    const oldSecret = key.secret;
+
+    const rotated = await rotateKey(request, ownerToken, tenantId, key.id, {});
+
+    await waitSeconds(5);
+    const oldSecretAfterWait = await sendPingRequest(request, oldSecret);
+    assertResponseStatus(oldSecretAfterWait, 200);
+
+    const newSecretWorks = await sendPingRequest(request, rotated.secret);
+    assertResponseStatus(newSecretWorks, 200);
+  });
+
 });
