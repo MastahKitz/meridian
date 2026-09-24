@@ -6,7 +6,8 @@
     "seed": "node scripts/seed.js",
     "seed:large": "node scripts/seed.js --large",
     "test:functional": "playwright test",
-    "test:functional:report": "playwright show-report test-report"
+    "test:functional:report": "playwright show-report test-report",
+    "test:unit": "npm run test:coverage --workspace=apps/api"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
