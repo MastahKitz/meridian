@@ -25,3 +25,17 @@ export async function assertScopeForbiddenError(response: APIResponse, missingSc
     statusCode: 403,
   }, { exact: true });
 }
+
+// SUP-1051: rate-limit.guard.ts's UnauthorizedException when api-key.service.ts's
+// resolve() finds no row (wrong secret, unknown prefix, or revoked) — the same
+// message regardless of which of those it was. Expected to currently FAIL for
+// a just-revoked key still inside api-key.service.ts's 60s cache window.
+export async function assertInvalidApiKeyError(response: APIResponse) {
+  assertResponseStatus(response, 401);
+  const body = await response.json();
+  assertResponseBody(body, {
+    message: 'Invalid API key',
+    error: 'Unauthorized',
+    statusCode: 401,
+  }, { exact: true });
+}

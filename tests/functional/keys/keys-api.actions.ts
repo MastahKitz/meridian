@@ -31,3 +31,20 @@ export async function sendKeyCreateRequest(
     body,
   });
 }
+
+export async function sendKeyDeleteRequest(
+  request: APIRequestContext,
+  accessToken: string | undefined,
+  tenantId: string | undefined,
+  keyId: string,
+) {
+  const headers: Record<string, string> = {};
+  if (accessToken !== undefined) headers['Authorization'] = `Bearer ${accessToken}`;
+  if (tenantId !== undefined) headers['x-tenant-id'] = tenantId;
+
+  return sendApiRequest(request, {
+    method: 'DELETE',
+    url: `api/v1/keys/${keyId}`,
+    headers,
+  });
+}
