@@ -55,6 +55,12 @@ export const RATE_LIMIT_OVERRIDE_CEILINGS: Record<string, number> = {
   SCALE: 25_000,
 };
 
+// tenants.controller.ts's own literal audit action names — the domain-specific
+// values a caller passes to audit-log/audit-log-api.assertions.ts's generic
+// assertAuditLogEntries, not baked into a rate-limit-specific assertion.
+export const RATE_LIMIT_OVERRIDE_SET_ACTION = 'tenant.rate_limit_override.set';
+export const RATE_LIMIT_OVERRIDE_CLEAR_ACTION = 'tenant.rate_limit_override.cleared';
+
 // Same shape as auth's/memberships' error bodies (Nest's default
 // HttpException), own literal type rather than a shared one — these messages
 // (ceiling validation, the OWNER-only role gate) are rate-limit-specific,

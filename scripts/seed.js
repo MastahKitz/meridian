@@ -43,6 +43,14 @@ async function seed({ large = false } = {}) {
     'rate-limit-member@mutating.test',
     'rate-limit-viewer@mutating.test',
     'rate-limit-billing@mutating.test',
+    // The audit-log domain's own scratch users — audit-log-api.spec.ts uses
+    // rate-limit-override only as an example action to trigger, so it gets
+    // its own tenant and users rather than borrowing rate-limit's.
+    'audit-log-owner@mutating.test',
+    'audit-log-admin@mutating.test',
+    'audit-log-member@mutating.test',
+    'audit-log-viewer@mutating.test',
+    'audit-log-billing@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -77,6 +85,14 @@ async function seed({ large = false } = {}) {
     { name: 'rate-limit-mutating-clear-free', slug: 'rate-limit-mutating-clear-free', plan: 'FREE', timezone: 'UTC' },
     { name: 'rate-limit-mutating-clear-growth', slug: 'rate-limit-mutating-clear-growth', plan: 'GROWTH', timezone: 'UTC' },
     { name: 'rate-limit-mutating-clear-scale', slug: 'rate-limit-mutating-clear-scale', plan: 'SCALE', timezone: 'UTC' },
+    // The audit-log domain's own scratch tenant — covers any transaction
+    // that writes an audit entry, not just rate-limit-override (which is
+    // just this spec's example trigger), so it's named for the domain it
+    // actually belongs to rather than borrowing rate-limit's tenant. Kept
+    // separate from every other domain's mutating tenants so its "starts
+    // with zero entries" assertion can never see their writes. Audit-log
+    // recording isn't plan-dependent, so one tenant (FREE) is enough.
+    { name: 'audit-log-mutating', slug: 'audit-log-mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -121,6 +137,14 @@ async function seed({ large = false } = {}) {
     ['rate-limit-mutating-clear-growth', 'rate-limit-admin@mutating.test', 'ADMIN'],
     ['rate-limit-mutating-clear-scale', 'rate-limit-owner@mutating.test', 'OWNER'],
     ['rate-limit-mutating-clear-scale', 'rate-limit-admin@mutating.test', 'ADMIN'],
+    // All 5 roles — GET /tenant/audit-log is OWNER/ADMIN only
+    // (rbac-matrix.md "View audit log"), so this tenant stays self-contained
+    // for its own future RBAC-negative tests too.
+    ['audit-log-mutating', 'audit-log-owner@mutating.test', 'OWNER'],
+    ['audit-log-mutating', 'audit-log-admin@mutating.test', 'ADMIN'],
+    ['audit-log-mutating', 'audit-log-member@mutating.test', 'MEMBER'],
+    ['audit-log-mutating', 'audit-log-viewer@mutating.test', 'VIEWER'],
+    ['audit-log-mutating', 'audit-log-billing@mutating.test', 'BILLING'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
