@@ -51,7 +51,7 @@ export class AuthService {
   async refresh(refreshToken: string) {
     const session = await this.db.one(
       `SELECT id, user_id FROM sessions
-        WHERE refresh_token = $1 AND expires_at > now()`,
+        WHERE refresh_token = $1 AND revoked_at IS NULL AND expires_at > now()`,
       [refreshToken],
     );
     if (!session) throw new UnauthorizedException('Invalid refresh token');
