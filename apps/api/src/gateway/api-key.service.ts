@@ -31,11 +31,21 @@ export class ApiKeyService {
     if (!prefix || !secret) return null;
 
     const hash = createHash('sha256').update(secret).digest('hex');
+    // A2 rotation: a key resolves on its current secret, or its previous
+    // secret while that secret's own grace period hasn't expired yet.
+    // is_current flags which branch matched, so a previous-secret match
+    // never gets cached below — see that comment for why.
     const row = await this.db.one(
-      `SELECT k.id, k.tenant_id, k.prefix, k.scopes, t.plan, t.timezone, t.suspended, t.rate_limit_override
+      `SELECT k.id, k.tenant_id, k.prefix, k.scopes, t.plan, t.timezone, t.suspended, t.rate_limit_override,
+              (k.secret_hash = $2) AS is_current
          FROM api_keys k
          JOIN tenants t ON t.id = k.tenant_id
-        WHERE k.prefix = $1 AND k.secret_hash = $2 AND k.revoked_at IS NULL`,
+        WHERE k.prefix = $1
+          AND k.revoked_at IS NULL
+          AND (
+            k.secret_hash = $2
+            OR (k.previous_secret_hash = $2 AND k.previous_secret_expires_at > now())
+          )`,
       [prefix, hash],
     );
 
@@ -52,7 +62,18 @@ export class ApiKeyService {
         }
       : null;
 
-    this.cache.set(rawKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+    // A previous secret's validity has a hard wall-clock boundary
+    // (previous_secret_expires_at) that invalidateTenant() can't preempt —
+    // nothing calls it when a grace period elapses on its own. Caching a
+    // previous-secret match would let it keep authenticating past that
+    // boundary for up to this cache's own TTL, the same staleness class as
+    // SUP-1051 but via natural expiry instead of an explicit revoke/rotate.
+    // The current secret has no such boundary (only ever ended by an
+    // explicit action, which does call invalidateTenant()), so it's safe to
+    // cache as before.
+    if (!row || row.is_current) {
+      this.cache.set(rawKey, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+    }
     return value;
   }
 

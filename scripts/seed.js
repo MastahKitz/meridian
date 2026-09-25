@@ -62,6 +62,11 @@ async function seed({ large = false } = {}) {
     'keys-member@mutating.test',
     'keys-viewer@mutating.test',
     'keys-billing@mutating.test',
+    // A2's own scratch user — GET /api/v1/usage/summary needs a key to be
+    // created and rotated against a tenant no other domain's usage_events
+    // could pollute, to prove old-secret-in-grace and new-secret requests
+    // both attribute to the same key.
+    'usage-owner@mutating.test',
   ]) {
     const { rows } = await pool.query(
       `INSERT INTO users (email, password_hash) VALUES ($1, $2)
@@ -114,6 +119,11 @@ async function seed({ large = false } = {}) {
     // shared with gw-mutating, which exercises the rate-limit override
     // instead).
     { name: 'keys-mutating', slug: 'keys-mutating', plan: 'FREE', timezone: 'UTC' },
+    // A2's own scratch tenant — GET /api/v1/usage/summary's aggregation
+    // across a rotated key's old and new secret, so it needs its own tenant
+    // whose usage_events only this spec ever writes (never shared with
+    // gw-mutating/keys-mutating, whose own requests would inflate the count).
+    { name: 'usage-mutating', slug: 'usage-mutating', plan: 'FREE', timezone: 'UTC' },
   ];
   for (const spec of tenantSpecs) {
     const { rows } = await pool.query(
@@ -172,6 +182,7 @@ async function seed({ large = false } = {}) {
     ['keys-mutating', 'keys-member@mutating.test', 'MEMBER'],
     ['keys-mutating', 'keys-viewer@mutating.test', 'VIEWER'],
     ['keys-mutating', 'keys-billing@mutating.test', 'BILLING'],
+    ['usage-mutating', 'usage-owner@mutating.test', 'OWNER'],
   ];
   for (const [slug, email, role] of memberships) {
     await pool.query(
