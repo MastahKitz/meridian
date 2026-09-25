@@ -34,17 +34,21 @@ As mentioned earlier, i prioritize more on API tests since most business logic w
 
 For Part C:
 
-Priotized the analysis of defects based on severity.
-Priority 1: SUP1051, SUP1067, SUP1062 (appears to be security/performance issue and seems issue must be fixed ASAP)
-Priority 2: SUP1043 (appears functional issue but edge case. needs further confirmation.)
-Priority 3: SUP1058 (appears timezone related issue and happens on month start/end so if issue was raised at beginning of month, we still have time to investigate this later.)
-Priority 4: SUP1071 (my understanding this doesnt impact usage/billing and just annoying duplicate notifications? set to lowest priority)
+Prioritized the analysis of defects based on severity.
+
+-- Priority 1: SUP1051, SUP1067, SUP1062 (appears to be security/performance issue and seems issue must be fixed ASAP)
+
+-- Priority 2: SUP1043 (appears functional issue but edge case. needs further confirmation.)
+
+-- Priority 3: SUP1058 (appears timezone related issue and happens on month start/end so if issue was raised at beginning of month, we still have time to investigate this later.)
+
+-- Priority 4: SUP1071 (my understanding this doesnt impact usage/billing and just annoying duplicate notifications? set to lowest priority)
 
 *****
 
 - What you chose not to automate, why
 
-Deprioritized UI tests since section A and B are mostly covering business logic and can be tested via backend. Also most business logic appears to be on API layer so I really focused on API tests first. Once API tests are done, then can revisit UI tests. But again I add a couple of UI tests for demo purposes.
+Deprioritized UI tests since sections A and C are mostly covering business logic and can be tested via backend. Also most business logic appears to be on API layer so I really focused on API tests first. Once API tests are done, then can revisit UI tests. But again I add a couple of UI tests for demo purposes.
 
 Direct DB tests not covered. For me, better to test with GET API calls instead of directly querying the DB. API tests are less fragile. I experience a project before where we migrated to a different DB. Luckily we dont rely on DB tests so none of our tests broke. 
 
@@ -123,7 +127,7 @@ Priority 4:
 
 Note: 
 My tests in main branch will replicate the issues. Sample results: https://mastahkitz.github.io/meridian/runs/16/
-My tests in test/A2_2 has all the bug fixes. Sample results: https://mastahkitz.github.io/meridian/runs/17/
+My tests in test/A2_2 has all the bug fixes and has latest code changes (not just bug fixes). Sample results: https://mastahkitz.github.io/meridian/runs/17/
 
 
 *****
@@ -141,7 +145,7 @@ But generally, we need to:
 4. review/fix bugs (focused on critical/high ones first) then retest again (regression testing)
 5. ensure critical/high priority bugs are fixed. medium/low most likely can be descoped but still need to be reviewed properly and get signoff from all teams as known risks.
 
-Note: If however, let's say there's no other bugs besides what was discussed in Part A and C (lets just assume no other regression bugs). Since A is fully implemented and critical issues in C were already fixed. The remaining ones can be descoped to a hotfix (anyways by the nature of it these 4 are already existing in Production so shouldn't be a blocker at all), then we can give a conditional GO with the understanding that we haven't fixed yet the other 4 bugs but they shouldn't be adding any new issues in Production.
+Note: If however, let's say there's no other bugs besides what was discussed in Part A and C (lets just assume no other regression bugs). Since A is fully implemented and critical issues in C were already fixed. The remaining ones can be descoped to a hotfix (anyways by the nature of it these 4 are already existing in Production so shouldn't be a blocker at all), then we can give a conditional GO with the understanding that we haven't fixed yet the other 4 bugs but they shouldn't be adding any new issues in Production. We can plan the other 4 bugs as a hotfix or move to next official release.
 
 - AI usage disclosure
 I mainly used Claude Code. I used it for the following:
