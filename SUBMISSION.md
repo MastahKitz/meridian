@@ -34,11 +34,11 @@ As mentioned earlier, i prioritize more on API tests since most business logic w
 
 For Part C:
 
-Priotized the defects based on severity.
+Priotized the analysis of defects based on severity.
 Priority 1: SUP1051, SUP1067, SUP1062 (appears to be security/performance issue and seems issue must be fixed ASAP)
 Priority 2: SUP1043 (appears functional issue but edge case. needs further confirmation.)
 Priority 3: SUP1058 (appears timezone related issue and happens on month start/end so if issue was raised at beginning of month, we still have time to investigate this later.)
-Priority 4: SUP1071 (my understand this doesnt impact usage/billing and just annoying duplicate notifications? set to lowest priority)
+Priority 4: SUP1071 (my understanding this doesnt impact usage/billing and just annoying duplicate notifications? set to lowest priority)
 
 *****
 
@@ -100,7 +100,7 @@ Priority 1:
 
 Priority 2: 
 
-1. SUP1043
+1. SUP1043 (possibly a new feature/story rather than a defect)
 - severity: high
 - deprioritized but my initial hunch is the tenant's plan was changed in the middle of the month? plan change was mentioned in Part A but no API exists, so if the client's plan did change, then it must have been a direct DB change. assuming this was the case, then we need to know what DB script was ran so we can review it.
 - potential issues when incomplete/incorrect DB script was executed:
@@ -110,15 +110,15 @@ Priority 2:
 
 Priority 3:
 
-1. SUP1058 
+1. SUP1058 (possibly a new feature/story rather than a defect)
 - severity: medium
 - deprioritized but based on details, possibly a timezone issue. i am assuming our client uses their own timezone (e.g. Japan timezone) while our application is using UTC (both UI and API). need further confirmation if we need to use client's timezone (i.e. tenant's timezone) as well when computing usage/billing. My proposal is to use tenant's timezone for all computations we are doing in the system as this seems more logical from client's PoV.
 
 Priority 4: 
 
 1. SUP1071
-- severity: medium
-- deprioritized but based on details, I assume this doesnt impact usage/billing and just an annoying issue? need further confirmation.
+- severity: medium/low
+- deprioritized but based on details, I assume this doesnt impact usage/billing and just an annoying issue? need further confirmation how much this impacts the client.
 
 
 Note: 
