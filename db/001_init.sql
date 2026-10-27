@@ -48,6 +48,8 @@ CREATE TABLE api_keys (
   revoked_at   TIMESTAMPTZ,
   last_used_at TIMESTAMPTZ,
   scopes       TEXT[],
+  previous_secret_hash       TEXT,
+  previous_secret_expires_at TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_api_keys_prefix ON api_keys(prefix);

@@ -27,17 +27,22 @@ export class RateLimitGuard implements CanActivate {
     const window = Math.floor(Date.now() / 1000 / WINDOW_SECONDS);
     const bucket = `rl:${resolved.prefix}:${window}`;
 
-    const current = Number((await this.redis.client.get(bucket)) || 0);
+    // SUP-1067: INCR is atomic, unlike the previous GET-then-SET, which let
+    // concurrent requests all read the same `current` before any of them
+    // wrote their increment — letting more through than `limit`. The window
+    // only needs its expiry set once, by whichever request happens to be the
+    // first to create the key (INCR returns 1).
+    const next = await this.redis.client.incr(bucket);
+    if (next === 1) {
+      await this.redis.client.expire(bucket, WINDOW_SECONDS);
+    }
 
-    if (current >= limit) {
+    if (next > limit) {
       res.setHeader('X-RateLimit-Limit', String(limit));
       res.setHeader('X-RateLimit-Remaining', '0');
       res.setHeader('Retry-After', String(WINDOW_SECONDS));
       throw new HttpException('Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
     }
-
-    const next = current + 1;
-    await this.redis.client.set(bucket, String(next), 'EX', WINDOW_SECONDS);
 
     res.setHeader('X-RateLimit-Limit', String(limit));
     res.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit - next)));

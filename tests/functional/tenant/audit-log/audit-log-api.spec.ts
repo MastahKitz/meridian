@@ -12,6 +12,10 @@ import {
   RATE_LIMIT_OVERRIDE_SET_ACTION,
   RATE_LIMIT_OVERRIDE_CLEAR_ACTION,
 } from '../rate-limit/rate-limit-api.data';
+import { createKey } from '../../keys/keys-api.flow';
+import { KEY_CREATED_ACTION } from '../../keys/keys-api.data';
+import { rotateKey } from '../../keys/rotate/rotate-api.flow';
+import { KEY_ROTATED_ACTION } from '../../keys/rotate/rotate-api.data';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -20,6 +24,7 @@ test.describe('audit log api', { tag: ['@tenant', '@audit-log', '@api', '@mutati
   let ownerToken: string;
   let adminToken: string;
   let tenantId: string;
+  let keyId: string;
   const expectedEntries: ExpectedAuditLogEntry[] = [];
 
   test.beforeAll(async ({ playwright }) => {
@@ -58,6 +63,35 @@ test.describe('audit log api', { tag: ['@tenant', '@audit-log', '@api', '@mutati
       action: RATE_LIMIT_OVERRIDE_CLEAR_ACTION,
       target: tenantId,
       metadata: { previous, next: null },
+      actor_email: auditLogMutatingOwnerLoginBody.email,
+    });
+
+    const response = await sendAuditLogRequest(request, ownerToken, tenantId);
+    await assertAuditLogEntries(response, expectedEntries);
+  });
+
+  test('validate creating a key is recorded in the audit log', async ({ request }) => {
+    const key = await createKey(request, ownerToken, tenantId, { name: 'Audit log key' });
+    keyId = key.id;
+
+    expectedEntries.unshift({
+      action: KEY_CREATED_ACTION,
+      target: key.id,
+      metadata: { name: 'Audit log key', scopes: null },
+      actor_email: auditLogMutatingOwnerLoginBody.email,
+    });
+
+    const response = await sendAuditLogRequest(request, ownerToken, tenantId);
+    await assertAuditLogEntries(response, expectedEntries);
+  });
+
+  test('validate rotating a key is recorded in the audit log', async ({ request }) => {
+    const rotated = await rotateKey(request, ownerToken, tenantId, keyId, {});
+
+    expectedEntries.unshift({
+      action: KEY_ROTATED_ACTION,
+      target: keyId,
+      metadata: { prefix: rotated.prefix, gracePeriodSeconds: 3600 },
       actor_email: auditLogMutatingOwnerLoginBody.email,
     });
 

@@ -35,6 +35,15 @@ function renderHtml({ runs: runList, repoUrl = '', repository = '' }) {
         r.tags && r.tags.length
           ? r.tags.map((t) => `<span class="tag">${t}</span>`).join(' ')
           : '<span class="muted">—</span>';
+      const ut = r.unitTests;
+      const unitCell =
+        ut && ut.hasResults
+          ? `<span class="${ut.failed ? 'fail' : 'pass'}">${ut.passed}/${ut.total}</span>`
+          : '<span class="muted">—</span>';
+      const covCell =
+        ut && ut.hasResults && ut.coverage
+          ? `<span title="Statements ${ut.coverage.statements}% · Branches ${ut.coverage.branches}% · Functions ${ut.coverage.functions}% · Lines ${ut.coverage.lines}%">${ut.coverage.statements}%</span>`
+          : '<span class="muted">—</span>';
       return `        <tr>
           <td><span class="pill ${r.status}">${icon[r.status] || '?'} ${r.status}</span></td>
           <td>${runCell}</td>
@@ -48,6 +57,8 @@ function renderHtml({ runs: runList, repoUrl = '', repository = '' }) {
           <td class="num ${r.flaky ? 'flaky' : 'muted'}">${r.flaky || 0}</td>
           <td class="num muted">${r.skipped || 0}</td>
           <td class="muted nowrap">${dur}</td>
+          <td class="num">${unitCell}</td>
+          <td class="num">${covCell}</td>
           <td>${reportCell}</td>
         </tr>`;
     })
@@ -156,6 +167,14 @@ function renderHtml({ runs: runList, repoUrl = '', repository = '' }) {
     <div class="stat"><div class="label">Failed</div><div class="value fail">${latest.failed || 0}</div></div>
     <div class="stat"><div class="label">Flaky</div><div class="value flaky">${latest.flaky || 0}</div></div>
     <div class="stat"><div class="label">Skipped</div><div class="value">${latest.skipped || 0}</div></div>
+    <div class="stat"><div class="label">Unit tests</div><div class="value">${
+      latest.unitTests && latest.unitTests.hasResults ? `${latest.unitTests.passed}/${latest.unitTests.total}` : '—'
+    }</div></div>
+    <div class="stat"><div class="label">Unit coverage</div><div class="value">${
+      latest.unitTests && latest.unitTests.hasResults && latest.unitTests.coverage
+        ? `${latest.unitTests.coverage.statements}%`
+        : '—'
+    }</div></div>
   </section>
 
   <div class="table-wrap">
@@ -164,7 +183,8 @@ function renderHtml({ runs: runList, repoUrl = '', repository = '' }) {
         <tr>
           <th>Status</th><th>Run</th><th>Started</th><th>Commit</th><th>Triggered by</th><th>Tags</th>
           <th class="num">Total</th><th class="num">Pass</th><th class="num">Fail</th>
-          <th class="num">Flaky</th><th class="num">Skip</th><th>Duration</th><th>Report</th>
+          <th class="num">Flaky</th><th class="num">Skip</th><th>Duration</th>
+          <th class="num">Unit tests</th><th class="num">Unit coverage</th><th>Report</th>
         </tr>
       </thead>
       <tbody>

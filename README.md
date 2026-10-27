@@ -108,4 +108,31 @@ Supports `Idempotency-Key` on `POST /charges`. Failure and latency injection via
 
 ## Tests
 
-There is no test suite in this repository.
+### Unit tests (Jest)
+
+`apps/api` — permission resolution, limit calculation, usage aggregation, billing arithmetic.
+
+```bash
+npm run test:unit                    # from repo root; coverage + thresholds enforced
+npm test --workspace=apps/api        # no coverage, faster loop
+```
+
+### Functional / E2E tests (Playwright)
+
+Requires the stack running and seeded (see [Running](#running) above).
+
+```bash
+npm run test:functional              # full suite
+npx playwright test --grep @api      # tag-filtered: @api / @ui / @mutating / @error
+npm run test:functional:report       # open the last HTML report
+```
+
+### CI
+
+One GitHub Actions workflow runs unit tests, then the Playwright suite, on every push to
+`main`, and can also be dispatched manually against any branch (optionally with an `@tag`
+filter) from the Actions tab. Every run publishes results — E2E counts and unit test
+coverage — to a dashboard:
+
+- Dashboard: https://mastahkitz.github.io/meridian/
+- Example green run: https://github.com/MastahKitz/meridian/actions/runs/36006748101

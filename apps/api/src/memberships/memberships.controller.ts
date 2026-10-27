@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { JwtGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Actor, RequestActor, Roles } from '../common/decorators';
 import { DbService } from '../db/db.service';
 import { AuditService } from '../audit/audit.service';
-import type { MemberRole } from '../common/rbac';
+import { atLeast, type MemberRole } from '../common/rbac';
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'MEMBER', 'VIEWER', 'BILLING'];
 
@@ -34,6 +34,7 @@ export class MembershipsController {
     if (!body?.email) throw new BadRequestException('email required');
     const role = body.role ?? 'MEMBER';
     if (!VALID_ROLES.includes(role)) throw new BadRequestException('invalid role');
+    if (!atLeast(actor.role, role)) throw new ForbiddenException('Cannot grant a role higher than your own');
 
     let user = await this.db.one(`SELECT id FROM users WHERE email = $1`, [body.email]);
     if (!user) {

@@ -31,6 +31,10 @@ export async function withHookRequestContext<T>(
   }
 }
 
+export function waitSeconds(seconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+}
+
 export function assertResponseStatus(response: APIResponse, expectedStatus: number) {
   expect.soft(response.status()).toBe(expectedStatus);
 }

@@ -46,6 +46,9 @@ export const keysMutatingMemberLoginBody: LoginRequestBody = { email: 'keys-memb
 export const keysMutatingViewerLoginBody: LoginRequestBody = { email: 'keys-viewer@mutating.test', password };
 export const keysMutatingBillingLoginBody: LoginRequestBody = { email: 'keys-billing@mutating.test', password };
 
+// usage - mutating test data (A2)
+export const usageMutatingOwnerLoginBody: LoginRequestBody = { email: 'usage-owner@mutating.test', password };
+
 export interface LoginResponseBody {
   accessToken: string;
   refreshToken: string;
